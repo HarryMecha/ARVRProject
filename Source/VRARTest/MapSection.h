@@ -1,0 +1,79 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "MapTunnel.h"
+#include "MapSection.generated.h"
+
+UCLASS()
+class VRARTEST_API AMapSection : public AActor
+{
+	GENERATED_BODY()
+	
+public:	
+	// Sets default values for this actor's properties
+	AMapSection();
+
+	virtual void Tick(float DeltaTime) override;
+
+	void swapSelectedMaterial();
+
+	void spawnActorAtPoint(AActor* actorToSpawn);
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
+	class UStaticMeshComponent* mapMesh;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Spawning")
+	class USceneComponent* spawnPoint;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tunnels")
+	TArray<AMapTunnel*> connectedTunnels; 
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
+	class UBoxComponent* boxColliderSection;
+
+	void toggleFog(bool toggle);
+
+	void toggleWalls(bool toggle);
+
+	class AARVRGameManager* arvrmanager;
+
+	void setManager(AARVRGameManager* manager)
+	{
+		arvrmanager = manager;
+		for (AMapTunnel* tunnel : connectedTunnels)
+		{
+			tunnel->setManager(manager);
+		}
+	}
+
+	APooledEntity* currentEntity;
+
+	void setCurrentEntity(APooledEntity* entity)
+	{
+		currentEntity = entity;
+		entity->setOwnerSection(this);
+	}
+
+	void interactionConclusion(APooledEntity* entity);
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, Category = "Material")
+	UMaterialInterface* selectedMapMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Material")
+	UMaterialInterface* regularMapMaterial;
+
+	UFUNCTION()
+	void OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+private:	
+
+	bool isSelected;
+
+};

@@ -4,6 +4,7 @@
 #include "UIConnectionWidget.h"
 #include "UIObserver.h"
 #include "ARPawn.h"
+#include "Subject.h"
 
 void UUIConnectionWidget::NativeConstruct()
 {
@@ -25,21 +26,51 @@ void UUIConnectionWidget::NativeConstruct()
 		changeConfirmButtonVisibility();
 	}
 
+	
+	if (scaleSlider)
+	{
+		scaleSlider->OnValueChanged.AddDynamic(this, &UUIConnectionWidget::OnScaleSliderValueChanged);
+
+		scaleSlider->SetMinValue(0.1f);
+		scaleSlider->SetMaxValue(5.0f);
+		scaleSlider->SetValue(1.0f);
+
+		scaleSlider->SetVisibility(ESlateVisibility::Hidden);
+	}
+
+	if (leftRotateButton)
+	{
+		leftRotateButton->OnPressed.AddDynamic(this, &UUIConnectionWidget::OnLeftRotateButtonPressed);
+		leftRotateButton->OnReleased.AddDynamic(this, &UUIConnectionWidget::OnLeftRotateButtonReleased);
+
+		leftRotateButton->SetVisibility(ESlateVisibility::Hidden);
+	}
+
+	if (rightRotateButton)
+	{
+		rightRotateButton->OnPressed.AddDynamic(this, &UUIConnectionWidget::OnRightRotateButtonPressed);
+		rightRotateButton->OnReleased.AddDynamic(this, &UUIConnectionWidget::OnRightRotateButtonReleased);
+
+		rightRotateButton->SetVisibility(ESlateVisibility::Hidden);
+	}
+	
+
 }
+
 
 void UUIConnectionWidget::OnConnectionButtonClicked(Event event)
 {
 	switch (event) {
 	case(HOST_BUTTON):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Host Button Clicked"));
-		connectionButtonClicked.notify(event);
+		connectionButtonClicked->notify(event);
 		hostButton->SetVisibility(ESlateVisibility::Hidden);
 		clientButton->SetVisibility(ESlateVisibility::Hidden);
 		if (buttonsBorder) buttonsBorder->SetVisibility(ESlateVisibility::Hidden);
 		break;
 	case(CLIENT_BUTTON):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Client Button Clicked"));
-		connectionButtonClicked.notify(event);
+		connectionButtonClicked->notify(event);
 		hostButton->SetVisibility(ESlateVisibility::Hidden);
 		clientButton->SetVisibility(ESlateVisibility::Hidden);
 		if (buttonsBorder) buttonsBorder->SetVisibility(ESlateVisibility::Hidden);
@@ -47,16 +78,12 @@ void UUIConnectionWidget::OnConnectionButtonClicked(Event event)
 
 	case(CONFIRM_BUTTON):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Clicked"));
-		connectionButtonClicked.notify(event);
+		connectionButtonClicked->notify(event);
 		changeConfirmButtonVisibility();
 		break;
 	}
 }
 
-Subject& UUIConnectionWidget::GetConnectionButtonSubject()
-{
-	return connectionButtonClicked;
-}
 
 void UUIConnectionWidget::changeConfirmButtonVisibility()
 {
@@ -70,6 +97,40 @@ void UUIConnectionWidget::changeConfirmButtonVisibility()
 	}
 }
 
+void UUIConnectionWidget::changeSliderVisibility()
+{
+		switch (scaleSlider->GetVisibility()) {
+		case(ESlateVisibility::Hidden):
+			scaleSlider->SetVisibility(ESlateVisibility::Visible);
+			break;
+		case(ESlateVisibility::Visible):
+			scaleSlider->SetVisibility(ESlateVisibility::Hidden);
+			break;
+		}
+	
+}
+
+void UUIConnectionWidget::changeRotateButtonVisibility()
+{
+	switch (leftRotateButton->GetVisibility()) {
+	case(ESlateVisibility::Hidden):
+		leftRotateButton->SetVisibility(ESlateVisibility::Visible);
+		break;
+	case(ESlateVisibility::Visible):
+		leftRotateButton->SetVisibility(ESlateVisibility::Hidden);
+		break;
+	}
+	switch (rightRotateButton->GetVisibility()) {
+	case(ESlateVisibility::Hidden):
+		rightRotateButton->SetVisibility(ESlateVisibility::Visible);
+		break;
+	case(ESlateVisibility::Visible):
+		rightRotateButton->SetVisibility(ESlateVisibility::Hidden);
+		break;
+	}
+
+}
+
 
 void  UUIConnectionWidget::setupUIObserver(AARPawn* arPawn = nullptr)
 {
@@ -77,6 +138,13 @@ void  UUIConnectionWidget::setupUIObserver(AARPawn* arPawn = nullptr)
 	
 	UIObserverInstance = NewObject<UUIObserver>(this);
 	UIObserverInstance->init(currentWorld, arPawn);
-	GetConnectionButtonSubject().addObserver(UIObserverInstance);
+	connectionButtonClicked->addObserver(UIObserverInstance);
+	
+}
+
+void UUIConnectionWidget::OnScaleSliderValueChanged(float value)
+{
+
+	connectionButtonClicked->notify(SLIDER_CHANGE, value, false);
 	
 }

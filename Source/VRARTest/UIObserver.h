@@ -3,8 +3,8 @@
 #include "CoreMinimal.h"
 #include "Observer.h"
 #include "EngineUtils.h"
-#include "ARPawn.h"
 #include "VRCharacter.h"
+class AARPawn;
 class UUIConnectionWidget;
 class AUDPCommunicationsManager;
 
@@ -21,7 +21,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Observer")
 	void init(UWorld* world, AARPawn* pawn);
 
-	void onNotify(Event event);
+	void onNotify(Event event, float value = 0, bool b = false);
 
 private:
 	UPROPERTY()

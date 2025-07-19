@@ -2,20 +2,25 @@
 
 
 #include "ARMapSetupUI.h"
+#include "UIObserver.h"
 #include "ARPawn.h"
 
 void UARMapSetupUI::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (treasureButton)
+	buttonList.Add(treasureButton,TREASURE_BUTTON);
+	buttonList.Add(trapButton,TRAP_BUTTON);
+
+
+	if (TreasureButtonObject)
 	{
-		treasureButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnHostButtonClicked);
+		TreasureButtonObject->OnClicked.AddDynamic(this, &UARMapSetupUI::OnTreasureButtonClicked);
 	}
 
-	if (trapButton)
+	if (TrapButtonObject)
 	{
-		trapButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnClientButtonClicked);
+		TrapButtonObject->OnClicked.AddDynamic(this, &UARMapSetupUI::OnTrapButtonClicked);
 	}
 
 	if (confirmButton)
@@ -25,6 +30,56 @@ void UARMapSetupUI::NativeConstruct()
 	}
 
 }
+
+void UARMapSetupUI::OnButtonClicked(Event event)
+{
+	switch (event) {
+	case(TREASURE_BUTTON):
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Treasure Button Clicked"));
+		if (currentlySelectedButtonType ==  EMPTY || currentlySelectedButtonType != TREASURE_BUTTON)
+		{
+			currentlySelectedButtonType = TREASURE_BUTTON;
+			buttonClicked.notify(event);
+
+		}
+
+		break;
+	case(TRAP_BUTTON):
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Trap Button Clicked"));
+		if (currentlySelectedButtonType == EMPTY || currentlySelectedButtonType != TRAP_BUTTON)
+		{
+			currentlySelectedButtonType = TRAP_BUTTON;
+			buttonClicked.notify(event);
+		}
+		break;
+
+	case(CONFIRM_BUTTON_MAIN):
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Clicked"));
+		buttonClicked.notify(event);
+		changeConfirmButtonVisibility();
+		break;
+	}
+	moveButtons();
+}
+
+void UARMapSetupUI::moveButtons()
+{
+	for (auto entry : buttonList)
+	{
+		if (entry.Value == currentlySelectedButtonType)
+		{
+			//entry.Key.Key->SetBackgroundColor(FLinearColor::Blue);
+			entry.Key.Value = EButtonState::EXTENDED;
+		}
+		else
+		{
+			//entry.Key.Key->SetBackgroundColor(FLinearColor::White);
+			entry.Key.Value = EButtonState::RECEEDED;
+		}
+
+	}
+}
+
 
 void UARMapSetupUI::changeConfirmButtonVisibility()
 {
@@ -42,8 +97,8 @@ void UARMapSetupUI::setupUIObserver(AARPawn* arPawn = nullptr)
 {
 	UWorld* currentWorld = GetWorld();
 
-	UIObserverInstance = NewObject<UUIObserver>(this, UIObserverClass);
+	UIObserverInstance = NewObject<UUIObserver>(this);
 	UIObserverInstance->init(currentWorld, arPawn);
-	GetConnectionButtonSubject().addObserver(UIObserverInstance);
+	buttonClicked.addObserver(UIObserverInstance);
 
 }

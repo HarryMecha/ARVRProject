@@ -7,6 +7,8 @@
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "Components/Border.h"
+#include "Components/Slider.h"
+#include "Observer.h"
 #include "Subject.h"
 class UUIObserver;
 class AARPawn;
@@ -21,9 +23,11 @@ class VRARTEST_API UUIConnectionWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	Subject& GetConnectionButtonSubject();
-
 	void changeConfirmButtonVisibility();
+
+	void changeSliderVisibility();
+
+	void changeRotateButtonVisibility();
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void setupUIObserver(AARPawn* pawn);
@@ -43,12 +47,23 @@ protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	UBorder* buttonsBorder;
 
-	//subject for host button clicked
-	Subject connectionButtonClicked;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	UButton* leftRotateButton;
 
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	UButton* rightRotateButton;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	USlider* scaleSlider;
+	
+	//subject for host button clicked
+	Subject* connectionButtonClicked = new Subject();
+
+	UPROPERTY()
 	UUIObserver* UIObserverInstance;
 
 private:
+	
 	UFUNCTION()
 	void OnHostButtonClicked()
 	{
@@ -64,7 +79,36 @@ private:
 	{
 		OnConnectionButtonClicked(CONFIRM_BUTTON);
 	}
+	
+	UFUNCTION()
+	void OnScaleSliderValueChanged(float Value);
 
 	void OnConnectionButtonClicked(Event event);
+
+	UFUNCTION()
+	void OnLeftRotateButtonPressed()
+	{
+		connectionButtonClicked->notify(LEFT_ROTATION,0,true);
+	}
+
+	UFUNCTION()
+	void OnLeftRotateButtonReleased()
+	{
+		connectionButtonClicked->notify(LEFT_ROTATION, 0, false);
+	}
+
+	UFUNCTION()
+	void OnRightRotateButtonPressed()
+	{
+		connectionButtonClicked->notify(RIGHT_ROTATION,0, true);
+
+	}
+
+	UFUNCTION()
+	void OnRightRotateButtonReleased()
+	{
+		connectionButtonClicked->notify(RIGHT_ROTATION, 0,false);
+	}
+
 
 };

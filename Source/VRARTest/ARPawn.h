@@ -10,6 +10,7 @@
 
 class UUIObserver;
 class UUIConnectionWidget;
+class UARMapSetupUI;
 class AARVRGameManager;
 
 #include "ARPawn.generated.h"
@@ -32,9 +33,31 @@ public:
 
 	UUserWidget* getConnectionWidget() const;
 
-	void SpawnMap();
+
+	void ConfirmMapChoice();
 
 	void startARSession();
+
+	void setObjectToSpawn(AARVRGameManager::ESpawnableObject objectType)
+	{
+		objectToSpawn = objectType;
+	}
+
+	void spawnObject();
+
+	void SetMapScale(float newScale);
+
+	void RotateMap(float rotationDirection);
+
+	void toggleMapLeftRotate(bool value)
+	{
+		mapLeftRotate = value;
+	}
+
+	void toggleMapRightRotate(bool value)
+	{
+		mapRightRotate = value;
+	}
 
 protected:
 	// Called when the game starts or when spawned
@@ -53,14 +76,21 @@ protected:
 
 	TMap<UARPlaneGeometry*, AActor*> activePlanes;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	TSubclassOf<UUIConnectionWidget> ConnectionWidgetBlueprintClass;
+
 	UPROPERTY(EditAnywhere, Category = "UI")
-	TSubclassOf<UUIConnectionWidget> ConnectionWidgetClass;
+	TSubclassOf<UARMapSetupUI> MapSetupWidgetBlueprintClass;
 
 	UUIConnectionWidget* connectionWidget;
+
+	UARMapSetupUI* mapSetupWidget;
 
 	AARVRGameManager* manager;
 
 	AMapSection* currentlySelectedMapSection;
+
+	void SpawnMap();
 
 private:	
 
@@ -84,4 +114,15 @@ private:
 	bool planeSelected = false;
 
 	bool connectionTypeSelected = false;
+
+	AARVRGameManager::ESpawnableObject objectToSpawn;
+	
+	float currentMapScale = 1.0f;
+
+	float baseScaleFactor = 1.0f;
+
+	bool mapLeftRotate = false;
+
+	bool mapRightRotate = false;
+
 };

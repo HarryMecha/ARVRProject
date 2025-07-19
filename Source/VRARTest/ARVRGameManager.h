@@ -46,7 +46,8 @@ public:
 		Skeleton = 2,
 		Demon = 3,
 		Chest = 4,
-		Trap = 5
+		Trap = 5,
+		None = 6
 	};
 
 	AARVRGameManager();

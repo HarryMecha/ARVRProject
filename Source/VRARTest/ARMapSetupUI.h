@@ -8,15 +8,21 @@
 #include "Components/Button.h"
 #include "Components/Border.h"
 #include "Subject.h"
+class UUIObserver;
 class AARPawn;
 #include "ARMapSetupUI.generated.h"
 
-/**
- * 
- */
+UENUM(BlueprintType)
+enum class EButtonState : uint8
+{
+	EXTENDED,
+	RECEEDED
+};
+
 UCLASS()
 class VRARTEST_API UARMapSetupUI : public UUserWidget
 {
+
 	GENERATED_BODY()
 public:
 	virtual void NativeConstruct() override;
@@ -26,31 +32,51 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void setupUIObserver(AARPawn* pawn);
 
+	UButton* getConfirmButton()
+	{
+		return confirmButton;
+	}
+
 protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	UButton* treasureButton;
+	UButton* TreasureButtonObject;
+
+	TPair<UButton*, EButtonState> treasureButton = MakeTuple(TreasureButtonObject, EButtonState::RECEEDED);
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	UButton* trapButton;
+	UButton* TrapButtonObject;
+
+	TPair<UButton*, EButtonState> trapButton = MakeTuple(TrapButtonObject, EButtonState::RECEEDED);
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UButton* confirmButton;
+
+	//subject for host button clicked
+	Subject buttonClicked;
+
+	UUIObserver* UIObserverInstance;
+
+	TMap<TPair<UButton*, EButtonState>, Event> buttonList;
 private:
 	UFUNCTION()
-	void OnHostButtonClicked()
+	void OnTreasureButtonClicked()
 	{
-		OnConnectionButtonClicked(TREASURE_BUTTON);
+		OnButtonClicked(TREASURE_BUTTON);
 	}
 	UFUNCTION()
-	void OnClientButtonClicked()
+	void OnTrapButtonClicked()
 	{
-		OnConnectionButtonClicked(TRAP_BUTTON);
+		OnButtonClicked(TRAP_BUTTON);
 	}
 	UFUNCTION()
 	void OnConfirmButtonClicked()
 	{
-		OnConnectionButtonClicked(CONFIRM_BUTTON);
+		OnButtonClicked(CONFIRM_BUTTON_MAIN);
 	}
 
-	void OnConnectionButtonClicked(Event event);
+	void OnButtonClicked(Event event);
+
+	Event currentlySelectedButtonType = EMPTY;
+
+	void moveButtons();
 };

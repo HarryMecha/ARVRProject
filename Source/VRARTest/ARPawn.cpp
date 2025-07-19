@@ -7,6 +7,7 @@
 #include "Blueprint/UserWidget.h"
 #include "UIConnectionWidget.h"
 #include "UIObserver.h"
+#include "ARMapSetupUI.h"
 #include "ARVRGameManager.h"
 #include "Components/BoxComponent.h"
 #include "Command.h"
@@ -19,6 +20,7 @@ AARPawn::AARPawn()
 	selectedPlane = nullptr;
 	manager = nullptr;
 	currentlySelectedMapSection = nullptr;
+	objectToSpawn = AARVRGameManager::ESpawnableObject::None;
 }
 
 // Called when the game starts or when spawned
@@ -36,9 +38,16 @@ void AARPawn::BeginPlay()
 	UWorld* currentWorld = GetWorld();
 	playerController = UGameplayStatics::GetPlayerController(currentWorld, 0);
 
-	connectionWidget = CreateWidget<UUIConnectionWidget>(playerController, ConnectionWidgetClass);
+	connectionWidget = CreateWidget<UUIConnectionWidget>(playerController, ConnectionWidgetBlueprintClass);
 	connectionWidget->setupUIObserver(this);
 	connectionWidget->AddToViewport();	
+
+	mapSetupWidget = CreateWidget<UARMapSetupUI>(playerController, MapSetupWidgetBlueprintClass);
+	mapSetupWidget->setupUIObserver(this);
+
+	mapLeftRotate = false;
+
+	mapRightRotate = false;
 
 }
 
@@ -50,6 +59,17 @@ void AARPawn::Tick(float DeltaTime)
 	if (showPlanes && connectionTypeSelected)
 	{
 		UpdatePlanes();
+	}
+	if (mapSpawned)
+	{
+		if (mapLeftRotate)
+		{
+			RotateMap(-1.0f);
+		}
+		else if (mapRightRotate)
+		{
+			RotateMap(1.0f);
+		}
 	}
 
 }
@@ -86,6 +106,13 @@ void AARPawn::OnScreenTouch()
 				AActor* hitActor = hitResult.GetActor();
 				if (!mapSpawned) {
 					changeSelected(hitActor);
+					
+					if (selectedPlane)
+					{
+						SpawnMap();
+						connectionWidget->changeSliderVisibility();
+						connectionWidget->changeRotateButtonVisibility();
+					}
 				}
 				else {
 					if (!manager->vrPlayerTurn) {
@@ -93,23 +120,27 @@ void AARPawn::OnScreenTouch()
 						{
 							GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %s"), *hitActor->GetName()));
 
-							if (hitActor->IsA(AMapSection::StaticClass())) {
+							if (hitActor->IsA(AMapSection::StaticClass()) && objectToSpawn != AARVRGameManager::ESpawnableObject::None) {
 								AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
 								if (currentlySelectedMapSection == selectedMapSection) {
 									currentlySelectedMapSection->swapSelectedMaterial();
-									manager->spawnEntityAtSection(currentlySelectedMapSection, AARVRGameManager::ESpawnableObject::Chest);
-									currentlySelectedMapSection->swapSelectedMaterial();
-									currentlySelectedMapSection = nullptr;
-									manager->switchTurns();
-									GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Turn Changed")));
 								}
-								if (!currentlySelectedMapSection || currentlySelectedMapSection != selectedMapSection) {
+								if (!currentlySelectedMapSection) {
 									selectedMapSection->swapSelectedMaterial();
 									currentlySelectedMapSection = selectedMapSection;
 								}
-								else {
-									currentlySelectedMapSection = nullptr;
+								if(currentlySelectedMapSection != selectedMapSection){
+									currentlySelectedMapSection->swapSelectedMaterial();
+									selectedMapSection->swapSelectedMaterial();
+									currentlySelectedMapSection = selectedMapSection;
 								}
+								if (mapSetupWidget->getConfirmButton()->GetVisibility() == ESlateVisibility::Hidden)
+								{
+									mapSetupWidget->changeConfirmButtonVisibility();
+								}
+							}
+							else {
+								currentlySelectedMapSection = nullptr;
 							}
 						}
 					}
@@ -121,11 +152,6 @@ void AARPawn::OnScreenTouch()
 
 void AARPawn::SpawnMap()
 {
-	if (!planeSelected)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("No plane selected."));
-		return;
-	}
 
 	FTransform planeTransform = selectedPlane->GetTransform();	
 	
@@ -140,7 +166,8 @@ void AARPawn::SpawnMap()
 	float planeWidth = planeExtent.X * 2.0f;
 	float planeDepth = planeExtent.Y * 2.0f;
 
-	float scaleFactor = FMath::Min(planeWidth / mapWidth, planeDepth / mapDepth);
+	baseScaleFactor = FMath::Min(planeWidth / mapWidth, planeDepth / mapDepth);
+	currentMapScale = 1.0f;
 
 
 	if (mapRoot)
@@ -150,7 +177,7 @@ void AARPawn::SpawnMap()
 
 		mapRoot->SetActorLocation(planeLocation);
 		mapRoot->SetActorRotation(planeRotation);
-		mapRoot->SetActorScale3D(FVector(scaleFactor));
+		mapRoot->SetActorScale3D(FVector(baseScaleFactor * currentMapScale));
 
 		TArray<AActor*> mapRootChildren;
 		mapRoot->GetAttachedActors(mapRootChildren);
@@ -162,18 +189,26 @@ void AARPawn::SpawnMap()
 			}
 
 		}
-
-		mapSpawned = true;
-		DestroyOldPlanes();
-		showPlanes = false;
-		TSharedPtr<arPlayerSelectionCommand> command = MakeShared<arPlayerSelectionCommand>();
-		command->commandType = AARVRGameManager::EMessageType::ARPlayerSelection;
-		command->sequenceCount = manager->getSequenceCount();
-		manager->arPlayerPlaneSelected = true;
-		manager->clearIncomingQueue();
-		manager->clearOutgoingQueue();
-		manager->AddToOutgoingCommandQueue(command);
 	}
+	mapSpawned = true;
+	DestroyOldPlanes();
+	showPlanes = false;
+}
+
+void AARPawn::ConfirmMapChoice() 
+{
+	mapSpawned = true;
+	DestroyOldPlanes();
+	showPlanes = false;
+	TSharedPtr<arPlayerSelectionCommand> command = MakeShared<arPlayerSelectionCommand>();
+	command->commandType = AARVRGameManager::EMessageType::ARPlayerSelection;
+	command->sequenceCount = manager->getSequenceCount();
+	manager->arPlayerPlaneSelected = true;
+	manager->clearIncomingQueue();
+	manager->clearOutgoingQueue();
+	manager->AddToOutgoingCommandQueue(command);
+	connectionWidget->RemoveFromViewport();
+	mapSetupWidget->AddToViewport();
 }
 
 AActor* AARPawn::CreatePlaneActor(UARPlaneGeometry* planeGeometry)
@@ -289,4 +324,42 @@ void AARPawn::startARSession()
 		return;
 	}
 	connectionTypeSelected = true;
+}
+
+void AARPawn::spawnObject()
+{
+	manager->spawnEntityAtSection(currentlySelectedMapSection, objectToSpawn);
+	currentlySelectedMapSection->swapSelectedMaterial();
+	currentlySelectedMapSection = nullptr;
+	objectToSpawn = AARVRGameManager::ESpawnableObject::None;
+	manager->switchTurns();
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Turn Changed")));
+}
+
+void AARPawn::SetMapScale(float newScale)
+{
+	AActor* mapRoot = manager->GetMapRoot();
+	if (mapRoot)
+	{
+		currentMapScale = newScale;
+		FVector newScaleVector = FVector(baseScaleFactor * newScale);
+		mapRoot->SetActorScale3D(newScaleVector);
+	}
+}
+
+void AARPawn::RotateMap(float rotationDirection)
+{
+	AActor* mapRoot = manager->GetMapRoot();
+	if (mapRoot)
+	{
+
+		FRotator currentRotation = mapRoot->GetActorRotation();
+
+		float rotationSpeed = 25.0f;
+		float deltaTime = GetWorld()->GetDeltaSeconds();
+		float rotationDelta = rotationDirection * rotationSpeed * deltaTime;
+
+		FRotator newRotation = currentRotation + FRotator(0, rotationDelta, 0);
+		mapRoot->SetActorRotation(newRotation);
+	}
 }

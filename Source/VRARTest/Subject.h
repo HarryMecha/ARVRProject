@@ -21,13 +21,13 @@ public:
 		observers.Remove(observe);
 	}
 
-	void notify(Event event) const
+	void notify(Event event, float value = 0, bool b = false) const
 	{
 		for (Observer* obs : observers)
 		{
 			if (obs)
 			{
-				obs->onNotify(event);
+				obs->onNotify(event, value,b);
 			}
 		}
 	}

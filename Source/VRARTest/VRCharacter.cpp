@@ -177,8 +177,10 @@ void AVRCharacter::TurnLeftRight(float value)
 		float turnRate = 45.0f;
 		float deltaTime = GetWorld()->GetDeltaSeconds();
 
-		FRotator newRotation(0, value * turnRate * deltaTime, 0);
-		AddActorWorldRotation(newRotation);
+		FRotator currentRotation = GetActorRotation();
+
+		AddControllerYawInput(value * turnRate * deltaTime);
+
 	}
 }
 

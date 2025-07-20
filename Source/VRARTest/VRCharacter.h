@@ -82,6 +82,7 @@ protected:
 
 	void controllerLineTrace(UMotionControllerComponent* controller);
 
+	void TurnLeftRight(float value);
 
 private:
 	APlayerController* playerController;

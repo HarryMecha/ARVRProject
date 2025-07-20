@@ -138,6 +138,8 @@ void AVRCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAxis("MoveForwardBack", this, &AVRCharacter::MoveForwardBack);
 	PlayerInputComponent->BindAxis("MoveLeftRight", this, &AVRCharacter::MoveLeftRight);
 
+	PlayerInputComponent->BindAxis("TurnLeftRight", this, &AVRCharacter::TurnLeftRight);
+
 	PlayerInputComponent->BindAction("UIInteractLeftTrigger", IE_Pressed, this, &AVRCharacter::LeftTriggerPressed);
 	PlayerInputComponent->BindAction("UIInteractLeftTrigger", IE_Released, this, &AVRCharacter::LeftTriggerReleased);
 	
@@ -149,7 +151,7 @@ void AVRCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 void AVRCharacter::MoveForwardBack(float strength)
 {
-	if (Controller && strength != 0.0f)
+	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER)
 	{
 		// Get forward direction relative to the camera yaw
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
@@ -160,11 +162,23 @@ void AVRCharacter::MoveForwardBack(float strength)
 
 void AVRCharacter::MoveLeftRight(float strength)
 {
-	if (Controller && strength != 0.0f)
+	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER)
 	{
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
 		FVector direction = FRotationMatrix(yawRotation).GetUnitAxis(EAxis::Y);
 		AddMovementInput(direction, strength);
+	}
+}
+
+void AVRCharacter::TurnLeftRight(float value)
+{
+	if (Controller && FMath::Abs(value) > KINDA_SMALL_NUMBER)
+	{
+		float turnRate = 45.0f;
+		float deltaTime = GetWorld()->GetDeltaSeconds();
+
+		FRotator newRotation(0, value * turnRate * deltaTime, 0);
+		AddActorWorldRotation(newRotation);
 	}
 }
 
@@ -229,9 +243,6 @@ void AVRCharacter::RightTriggerReleased()
 void AVRCharacter::controllerLineTrace(UMotionControllerComponent* controller) 
 {
 
-//AI GENERATED MAKE SURE YOU CHANGE IF IT LOOKS WEIRD!!!!
-
-	// Determine which ray mesh to use
 	UStaticMeshComponent* currentRayMesh = nullptr;
 	if (controller == leftController) {
 		currentRayMesh = leftControllerRayMesh;
@@ -242,7 +253,6 @@ void AVRCharacter::controllerLineTrace(UMotionControllerComponent* controller)
 
 	if (!currentRayMesh) return;
 
-	// Perform the line trace first
 	FVector rayStart = controller->GetComponentLocation();
 	FVector rayDirection = controller->GetForwardVector();
 	FVector rayEnd = rayStart + (rayDirection * controllerRayLength);
@@ -252,26 +262,18 @@ void AVRCharacter::controllerLineTrace(UMotionControllerComponent* controller)
 	parameters.AddIgnoredActor(this);
 	bool hasHit = GetWorld()->LineTraceSingleByChannel(hitResult, rayStart, rayEnd, ECollisionChannel::ECC_Visibility, parameters, FCollisionResponseParams());
 
-	// Determine the actual end point of the ray (either hit point or max distance)
 	FVector actualRayEnd = hasHit ? hitResult.Location : rayEnd;
 
-	// Calculate the distance from controller to end point
 	float actualDistance = FVector::Dist(rayStart, actualRayEnd);
 
-	// Position cylinder at the midpoint between start and end
 	FVector midPoint = rayStart + ((actualRayEnd - rayStart) * 0.5f);
 	currentRayMesh->SetWorldLocation(midPoint);
 
-	// Rotate cylinder to point from start to end
 	FVector rayVector = actualRayEnd - rayStart;
 	FRotator rayRotation = rayVector.Rotation();
 
-	// Since your cylinder extends along Z-axis, rotate it to align with the ray direction
-	// Add 90 degrees to pitch to align Z-axis with ray direction
 	currentRayMesh->SetWorldRotation(rayRotation + FRotator(90.0f, 0.0f, 0.0f));
 
-	// Scale the cylinder to match the ray length
-	// Keep X and Y small for thickness, Z for length
 	currentRayMesh->SetWorldScale3D(FVector(0.01f, 0.01f, actualDistance * 0.01f));
 
 }

@@ -33,6 +33,7 @@ public:
 
 	UUserWidget* getConnectionWidget() const;
 
+	void resetARState();
 
 	void ConfirmMapChoice();
 
@@ -41,6 +42,11 @@ public:
 	void setObjectToSpawn(AARVRGameManager::ESpawnableObject objectType)
 	{
 		objectToSpawn = objectType;
+	}
+
+	bool getMapSpawned()
+	{
+		return mapSpawned;
 	}
 
 	void spawnObject();
@@ -58,6 +64,9 @@ public:
 	{
 		mapRightRotate = value;
 	}
+
+	void SpawnMap();
+
 
 protected:
 	// Called when the game starts or when spawned
@@ -89,8 +98,6 @@ protected:
 	AARVRGameManager* manager;
 
 	AMapSection* currentlySelectedMapSection;
-
-	void SpawnMap();
 
 private:	
 

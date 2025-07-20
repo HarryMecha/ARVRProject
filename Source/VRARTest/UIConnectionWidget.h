@@ -23,14 +23,36 @@ class VRARTEST_API UUIConnectionWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void changeConfirmButtonVisibility();
+	void changeWidgetVisibility(UWidget* widgetItem);
 
-	void changeSliderVisibility();
-
-	void changeRotateButtonVisibility();
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void setupUIObserver(AARPawn* pawn);
+
+	USlider* getScaleSlider()
+	{
+		return scaleSlider;
+	}
+
+	UButton* getConfirmButton()
+	{
+		return confirmButton;
+	}
+
+	UButton* getLeftRotateButton()
+	{
+		return leftRotateButton;
+	}
+
+	UButton* getRightRotateButton()
+	{
+		return rightRotateButton;
+	}
+
+	UButton* getResetButton()
+	{
+		return resetButton;
+	}
 
 protected:
 	virtual void NativeConstruct() override;
@@ -55,12 +77,17 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	USlider* scaleSlider;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	UButton* resetButton;
+
 	
 	//subject for host button clicked
 	Subject* connectionButtonClicked = new Subject();
 
 	UPROPERTY()
 	UUIObserver* UIObserverInstance;
+
 
 private:
 	
@@ -110,5 +137,11 @@ private:
 		connectionButtonClicked->notify(RIGHT_ROTATION, 0,false);
 	}
 
+	UFUNCTION()
+	void OnResetButtonClicked()
+	{
+		connectionButtonClicked->notify(RESET_BUTTON, 0, false);
+
+	}
 
 };

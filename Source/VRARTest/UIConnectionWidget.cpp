@@ -23,7 +23,7 @@ void UUIConnectionWidget::NativeConstruct()
 	if (confirmButton)
 	{
 		confirmButton->OnClicked.AddDynamic(this, &UUIConnectionWidget::OnConfirmButtonClicked);
-		changeConfirmButtonVisibility();
+		confirmButton->SetVisibility(ESlateVisibility::Hidden);
 	}
 
 	
@@ -54,7 +54,11 @@ void UUIConnectionWidget::NativeConstruct()
 		rightRotateButton->SetVisibility(ESlateVisibility::Hidden);
 	}
 	
-
+	if (resetButton)
+	{
+		resetButton->OnClicked.AddDynamic(this, &UUIConnectionWidget::OnResetButtonClicked);
+		resetButton->SetVisibility(ESlateVisibility::Hidden);
+	}
 }
 
 
@@ -79,58 +83,22 @@ void UUIConnectionWidget::OnConnectionButtonClicked(Event event)
 	case(CONFIRM_BUTTON):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Clicked"));
 		connectionButtonClicked->notify(event);
-		changeConfirmButtonVisibility();
 		break;
 	}
 }
 
 
-void UUIConnectionWidget::changeConfirmButtonVisibility()
+void UUIConnectionWidget::changeWidgetVisibility(UWidget* widgetItem)
 {
-	switch (confirmButton->GetVisibility()) {
+	switch (widgetItem->GetVisibility()) {
 	case(ESlateVisibility::Hidden):
-		confirmButton->SetVisibility(ESlateVisibility::Visible);
+		widgetItem->SetVisibility(ESlateVisibility::Visible);
 		break;
 	case(ESlateVisibility::Visible):
-		confirmButton->SetVisibility(ESlateVisibility::Hidden);
+		widgetItem->SetVisibility(ESlateVisibility::Hidden);
 		break;
 	}
 }
-
-void UUIConnectionWidget::changeSliderVisibility()
-{
-		switch (scaleSlider->GetVisibility()) {
-		case(ESlateVisibility::Hidden):
-			scaleSlider->SetVisibility(ESlateVisibility::Visible);
-			break;
-		case(ESlateVisibility::Visible):
-			scaleSlider->SetVisibility(ESlateVisibility::Hidden);
-			break;
-		}
-	
-}
-
-void UUIConnectionWidget::changeRotateButtonVisibility()
-{
-	switch (leftRotateButton->GetVisibility()) {
-	case(ESlateVisibility::Hidden):
-		leftRotateButton->SetVisibility(ESlateVisibility::Visible);
-		break;
-	case(ESlateVisibility::Visible):
-		leftRotateButton->SetVisibility(ESlateVisibility::Hidden);
-		break;
-	}
-	switch (rightRotateButton->GetVisibility()) {
-	case(ESlateVisibility::Hidden):
-		rightRotateButton->SetVisibility(ESlateVisibility::Visible);
-		break;
-	case(ESlateVisibility::Visible):
-		rightRotateButton->SetVisibility(ESlateVisibility::Hidden);
-		break;
-	}
-
-}
-
 
 void  UUIConnectionWidget::setupUIObserver(AARPawn* arPawn = nullptr)
 {

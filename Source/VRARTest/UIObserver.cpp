@@ -54,7 +54,14 @@ void UUIObserver::onNotify(Event event, float value, bool b)
 
 	case CONFIRM_BUTTON:
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Notified"));
-		arPawn->ConfirmMapChoice();
+		if (!arPawn->getMapSpawned()) 
+		{
+			arPawn->SpawnMap();
+		}
+		else
+		{
+			arPawn->ConfirmMapChoice();
+		}
 		break;
 
 	case SLIDER_CHANGE:
@@ -88,6 +95,12 @@ void UUIObserver::onNotify(Event event, float value, bool b)
 		if (arPawn)
 		{
 			arPawn->toggleMapRightRotate(b);
+		}
+		break;
+	case RESET_BUTTON:
+		if (arPawn)
+		{
+			arPawn->resetARState();
 		}
 		break;
 	}

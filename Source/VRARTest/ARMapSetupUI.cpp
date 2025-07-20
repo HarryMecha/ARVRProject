@@ -26,8 +26,9 @@ void UARMapSetupUI::NativeConstruct()
 	if (confirmButton)
 	{
 		confirmButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnConfirmButtonClicked);
-		changeConfirmButtonVisibility();
+		changeButtonVisibility(confirmButton);
 	}
+
 
 }
 
@@ -39,7 +40,7 @@ void UARMapSetupUI::OnButtonClicked(Event event)
 		if (currentlySelectedButtonType ==  EMPTY || currentlySelectedButtonType != TREASURE_BUTTON)
 		{
 			currentlySelectedButtonType = TREASURE_BUTTON;
-			buttonClicked.notify(event);
+			buttonClicked->notify(event);
 
 		}
 
@@ -49,14 +50,14 @@ void UARMapSetupUI::OnButtonClicked(Event event)
 		if (currentlySelectedButtonType == EMPTY || currentlySelectedButtonType != TRAP_BUTTON)
 		{
 			currentlySelectedButtonType = TRAP_BUTTON;
-			buttonClicked.notify(event);
+			buttonClicked->notify(event);
 		}
 		break;
 
 	case(CONFIRM_BUTTON_MAIN):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Clicked"));
-		buttonClicked.notify(event);
-		changeConfirmButtonVisibility();
+		buttonClicked->notify(event);
+		changeButtonVisibility(confirmButton);
 		break;
 	}
 	moveButtons();
@@ -81,17 +82,18 @@ void UARMapSetupUI::moveButtons()
 }
 
 
-void UARMapSetupUI::changeConfirmButtonVisibility()
+void UARMapSetupUI::changeButtonVisibility(UButton* button)
 {
-	switch (confirmButton->GetVisibility()) {
+	switch (button->GetVisibility()) {
 	case(ESlateVisibility::Hidden):
-		confirmButton->SetVisibility(ESlateVisibility::Visible);
+		button->SetVisibility(ESlateVisibility::Visible);
 		break;
 	case(ESlateVisibility::Visible):
-		confirmButton->SetVisibility(ESlateVisibility::Hidden);
+		button->SetVisibility(ESlateVisibility::Hidden);
 		break;
 	}
 }
+
 
 void UARMapSetupUI::setupUIObserver(AARPawn* arPawn = nullptr)
 {
@@ -99,6 +101,6 @@ void UARMapSetupUI::setupUIObserver(AARPawn* arPawn = nullptr)
 
 	UIObserverInstance = NewObject<UUIObserver>(this);
 	UIObserverInstance->init(currentWorld, arPawn);
-	buttonClicked.addObserver(UIObserverInstance);
+	buttonClicked->addObserver(UIObserverInstance);
 
 }

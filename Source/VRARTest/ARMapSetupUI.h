@@ -27,7 +27,7 @@ class VRARTEST_API UARMapSetupUI : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 
-	void changeConfirmButtonVisibility();
+	void changeButtonVisibility(UButton* button);
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void setupUIObserver(AARPawn* pawn);
@@ -52,7 +52,7 @@ protected:
 	UButton* confirmButton;
 
 	//subject for host button clicked
-	Subject buttonClicked;
+	Subject* buttonClicked = new Subject();
 
 	UUIObserver* UIObserverInstance;
 

@@ -106,13 +106,6 @@ void AARPawn::OnScreenTouch()
 				AActor* hitActor = hitResult.GetActor();
 				if (!mapSpawned) {
 					changeSelected(hitActor);
-					
-					if (selectedPlane)
-					{
-						SpawnMap();
-						connectionWidget->changeSliderVisibility();
-						connectionWidget->changeRotateButtonVisibility();
-					}
 				}
 				else {
 					if (!manager->vrPlayerTurn) {
@@ -136,7 +129,7 @@ void AARPawn::OnScreenTouch()
 								}
 								if (mapSetupWidget->getConfirmButton()->GetVisibility() == ESlateVisibility::Hidden)
 								{
-									mapSetupWidget->changeConfirmButtonVisibility();
+									mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
 								}
 							}
 							else {
@@ -167,6 +160,7 @@ void AARPawn::SpawnMap()
 	float planeDepth = planeExtent.Y * 2.0f;
 
 	baseScaleFactor = FMath::Min(planeWidth / mapWidth, planeDepth / mapDepth);
+	baseScaleFactor = FMath::Clamp(baseScaleFactor, 0.05f, 2.0f);  // Adjust bounds as needed
 	currentMapScale = 1.0f;
 
 
@@ -193,6 +187,10 @@ void AARPawn::SpawnMap()
 	mapSpawned = true;
 	DestroyOldPlanes();
 	showPlanes = false;
+	connectionWidget->changeWidgetVisibility(connectionWidget->getScaleSlider());
+	connectionWidget->changeWidgetVisibility(connectionWidget->getLeftRotateButton());
+	connectionWidget->changeWidgetVisibility(connectionWidget->getRightRotateButton());
+	connectionWidget->changeWidgetVisibility(connectionWidget->getResetButton());
 }
 
 void AARPawn::ConfirmMapChoice() 
@@ -285,7 +283,7 @@ void AARPawn::changeSelected(AActor* planeToChange)
 
 	if (!selectedPlane)
 	{
-		connectionWidget->changeConfirmButtonVisibility();
+		connectionWidget->changeWidgetVisibility(connectionWidget->getConfirmButton());
 		UStaticMeshComponent* planeMesh = planeActor->FindComponentByClass<UStaticMeshComponent>();
 		planeMesh->SetMaterial(0, selectedPlaneMaterial);
 		selectedPlane = planeActor;
@@ -294,7 +292,7 @@ void AARPawn::changeSelected(AActor* planeToChange)
 	}
 	else if(selectedPlane == planeActor)
 	{
-		connectionWidget->changeConfirmButtonVisibility();
+		connectionWidget->changeWidgetVisibility(connectionWidget->getConfirmButton());
 		UStaticMeshComponent* planeMesh = planeActor->FindComponentByClass<UStaticMeshComponent>();
 		planeMesh->SetMaterial(0, unselectedPlaneMaterial);
 		selectedPlane = nullptr;
@@ -362,4 +360,48 @@ void AARPawn::RotateMap(float rotationDirection)
 		FRotator newRotation = currentRotation + FRotator(0, rotationDelta, 0);
 		mapRoot->SetActorRotation(newRotation);
 	}
+}
+
+void AARPawn::resetARState()
+{
+	DestroyOldPlanes();
+
+	// Reset map and selection
+	selectedPlane = nullptr;
+	selectedPlaneGeometry = nullptr;
+	planeSelected = false;
+	mapSpawned = false;
+
+	AActor* mapRoot = manager->GetMapRoot();
+	if (mapRoot)
+	{
+		mapRoot->SetActorScale3D(FVector(baseScaleFactor * currentMapScale));
+		mapRoot->SetActorHiddenInGame(true);
+
+		TArray<AActor*> mapRootChildren;
+		mapRoot->GetAttachedActors(mapRootChildren);
+		for (AActor* child : mapRootChildren)
+		{
+			if (child->Tags.Contains("ARMove"))
+			{
+				child->SetActorHiddenInGame(true);
+			}
+		}
+	}
+
+	if (connectionWidget)
+	{
+		connectionWidget->changeWidgetVisibility(connectionWidget->getConfirmButton());
+		connectionWidget->getScaleSlider()->SetValue(1.0f);
+		connectionWidget->changeWidgetVisibility(connectionWidget->getScaleSlider());
+		connectionWidget->changeWidgetVisibility(connectionWidget->getLeftRotateButton());
+		connectionWidget->changeWidgetVisibility(connectionWidget->getRightRotateButton());
+		connectionWidget->changeWidgetVisibility(connectionWidget->getResetButton());
+	}
+
+	FTimerHandle DelayPlanesHandle;
+	GetWorld()->GetTimerManager().SetTimer(DelayPlanesHandle, [this]()
+		{
+			showPlanes = true;
+		}, 0.5f, false);  // Delay allows AR system to stabilize
 }

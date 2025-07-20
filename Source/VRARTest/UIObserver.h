@@ -11,7 +11,7 @@ class AUDPCommunicationsManager;
 #include "UIObserver.generated.h"
 
 UCLASS()
-class VRARTEST_API UUIObserver : public UObject, public Observer
+class VRARTEST_API UUIObserver : public UObserver
 {
 	GENERATED_BODY()
 
@@ -21,7 +21,7 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Observer")
 	void init(UWorld* world, AARPawn* pawn);
 
-	void onNotify(Event event, float value = 0, bool b = false);
+	void OnNotify_Implementation(EEvent event, float value = 0, bool b = false);
 
 private:
 	UPROPERTY()

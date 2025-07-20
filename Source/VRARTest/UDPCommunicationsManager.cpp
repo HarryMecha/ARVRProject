@@ -38,7 +38,7 @@ void AUDPCommunicationsManager::Tick(float DeltaTime)
 		if (!connectionEstablished) {
 			if (hostDevice) {
 				TArray<uint8> packet;
-				packet.Add(static_cast<uint8>(AARVRGameManager::EMessageType::Connection));
+				packet.Add(static_cast<uint8>(EMessageType::Connection));
 				packet.Add(manager->getSequenceCount());
 				SendMessage(packet);
 			}

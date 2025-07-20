@@ -13,7 +13,7 @@ public:
     
     virtual ~Command() = default;
 
-    AARVRGameManager::EMessageType commandType;
+    EMessageType commandType;
 
     uint32 sequenceCount;
    
@@ -99,7 +99,7 @@ class SpawnAtSectionCommand : public Command
 public:
 
     uint32 sectionIndex;
-    AARVRGameManager::ESpawnableObject objectType;
+    ESpawnableObject objectType;
 
     virtual void execute(AARVRGameManager* manager) override
     {
@@ -175,6 +175,46 @@ public:
         Reader.Serialize(&sequenceCount, sizeof(sequenceCount));
 
         Reader.Serialize(&sectionIndex, sizeof(sectionIndex));
+
+    }
+};
+
+class SwitchTurnsCommand : public Command
+{
+public:
+
+    EPlayerRole playerTurn;
+
+    virtual void execute(AARVRGameManager* manager) override
+    {
+        manager->switchTurns(playerTurn);
+    }
+
+    TArray<uint8> serialise(AARVRGameManager* manager) override
+    {
+        TArray<uint8> packet;
+        FMemoryWriter Writer(packet, true);
+
+        uint8 MessageType = static_cast<uint8>(commandType);
+        Writer.Serialize(&MessageType, sizeof(uint8));
+
+        Writer.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        uint8 PlayerTurn = static_cast<uint8>(playerTurn);
+        Writer.Serialize(&PlayerTurn, sizeof(uint8));
+
+        return packet;
+    }
+
+    void deserialise(AARVRGameManager* manager, TArray<uint8> packet) override
+    {
+        FMemoryReader Reader(packet, true);
+
+        Reader.Serialize(&commandType, sizeof(uint8));
+
+        Reader.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Reader.Serialize(&playerTurn, sizeof(uint8));
 
     }
 };

@@ -156,7 +156,8 @@ void AVRCharacter::MoveForwardBack(float strength)
 		// Get forward direction relative to the camera yaw
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
 		FVector direction = FRotationMatrix(yawRotation).GetUnitAxis(EAxis::X);
-		AddMovementInput(direction, strength);
+		float movementSpeed = 0.2f;
+		AddMovementInput(direction, strength * movementSpeed);
 	}
 }
 
@@ -166,7 +167,8 @@ void AVRCharacter::MoveLeftRight(float strength)
 	{
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
 		FVector direction = FRotationMatrix(yawRotation).GetUnitAxis(EAxis::Y);
-		AddMovementInput(direction, strength);
+		float movementSpeed = 0.7f;
+		AddMovementInput(direction, strength * movementSpeed);
 	}
 }
 
@@ -297,7 +299,7 @@ void AVRCharacter::hasCharacterMoved()
 	
 	TSharedPtr<PlayerMovementCommand> command = MakeShared<PlayerMovementCommand>();
 
-	command->commandType = AARVRGameManager::EMessageType::PlayerMovement;
+	command->commandType = EMessageType::PlayerMovement;
 
 	command->sequenceCount = manager->getSequenceCount();
 

@@ -9,52 +9,67 @@ void UARMapSetupUI::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	buttonList.Add(treasureButton,TREASURE_BUTTON);
-	buttonList.Add(trapButton,TRAP_BUTTON);
-
-
-	if (TreasureButtonObject)
+	if (!buttonClicked)
 	{
-		TreasureButtonObject->OnClicked.AddDynamic(this, &UARMapSetupUI::OnTreasureButtonClicked);
+		buttonClicked = NewObject<USubject>(this, USubject::StaticClass());
 	}
 
-	if (TrapButtonObject)
+
+	buttonList.Add(TreasureButton, EEvent::TREASURE_BUTTON);
+	buttonList.Add(TrapButton, EEvent::TRAP_BUTTON);
+
+	buttonStates.Add(TreasureButton, EButtonState::RECEEDED);
+	buttonStates.Add(TrapButton, EButtonState::RECEEDED);
+
+	if (TreasureButton)
 	{
-		TrapButtonObject->OnClicked.AddDynamic(this, &UARMapSetupUI::OnTrapButtonClicked);
+		TreasureButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnTreasureButtonClicked);
+	}
+
+	if (TrapButton)
+	{
+		TrapButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnTrapButtonClicked);
 	}
 
 	if (confirmButton)
 	{
 		confirmButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnConfirmButtonClicked);
-		changeButtonVisibility(confirmButton);
+		//changeButtonVisibility(confirmButton);
 	}
 
 
 }
 
-void UARMapSetupUI::OnButtonClicked(Event event)
+void UARMapSetupUI::OnButtonClicked(EEvent event)
 {
 	switch (event) {
-	case(TREASURE_BUTTON):
+	case(EEvent::TREASURE_BUTTON):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Treasure Button Clicked"));
-		if (currentlySelectedButtonType ==  EMPTY || currentlySelectedButtonType != TREASURE_BUTTON)
+		if (currentlySelectedButtonType == EEvent::EMPTY || currentlySelectedButtonType != EEvent::TREASURE_BUTTON)
 		{
-			currentlySelectedButtonType = TREASURE_BUTTON;
-			buttonClicked->notify(event);
+			currentlySelectedButtonType = EEvent::TREASURE_BUTTON;
+			if (buttonClicked)
+			{
+				buttonClicked->notify(event);
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Button Clicked is nullptr"));
+			}
 
 		}
 
 		break;
-	case(TRAP_BUTTON):
+	case(EEvent::TRAP_BUTTON):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Trap Button Clicked"));
-		if (currentlySelectedButtonType == EMPTY || currentlySelectedButtonType != TRAP_BUTTON)
+		if (currentlySelectedButtonType == EEvent::EMPTY || currentlySelectedButtonType != EEvent::TRAP_BUTTON)
 		{
-			currentlySelectedButtonType = TRAP_BUTTON;
+			currentlySelectedButtonType = EEvent::TRAP_BUTTON;
 			buttonClicked->notify(event);
 		}
 		break;
 
-	case(CONFIRM_BUTTON_MAIN):
+	case(EEvent::CONFIRM_BUTTON_MAIN):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Clicked"));
 		buttonClicked->notify(event);
 		changeButtonVisibility(confirmButton);
@@ -63,21 +78,22 @@ void UARMapSetupUI::OnButtonClicked(Event event)
 	moveButtons();
 }
 
+
 void UARMapSetupUI::moveButtons()
 {
-	for (auto entry : buttonList)
+	for (const auto& entry : buttonList)
 	{
-		if (entry.Value == currentlySelectedButtonType)
+		UButton* button = entry.Key;
+		EEvent mappedEvent = entry.Value;
+
+		if (mappedEvent == currentlySelectedButtonType)
 		{
-			//entry.Key.Key->SetBackgroundColor(FLinearColor::Blue);
-			entry.Key.Value = EButtonState::EXTENDED;
+			buttonStates[button] = EButtonState::EXTENDED;
 		}
 		else
 		{
-			//entry.Key.Key->SetBackgroundColor(FLinearColor::White);
-			entry.Key.Value = EButtonState::RECEEDED;
+			buttonStates[button] = EButtonState::RECEEDED;
 		}
-
 	}
 }
 
@@ -101,6 +117,22 @@ void UARMapSetupUI::setupUIObserver(AARPawn* arPawn = nullptr)
 
 	UIObserverInstance = NewObject<UUIObserver>(this);
 	UIObserverInstance->init(currentWorld, arPawn);
+	if (!buttonClicked)
+	{
+		buttonClicked = NewObject<USubject>(this);
+		if (!buttonClicked)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to create buttonClicked subject!"));
+			return;
+		}
+	}
+
+	if (!UIObserverInstance)
+	{
+		UIObserverInstance = NewObject<UUIObserver>(this);
+		UIObserverInstance->init(currentWorld, arPawn);
+	}
+
 	buttonClicked->addObserver(UIObserverInstance);
 
 }

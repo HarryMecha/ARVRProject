@@ -10,6 +10,11 @@ void UUIConnectionWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	if (!connectionButtonClicked)
+	{
+		connectionButtonClicked = NewObject<USubject>(this, USubject::StaticClass());
+	}
+
 	if (hostButton)
 	{
 		hostButton->OnClicked.AddDynamic(this, &UUIConnectionWidget::OnHostButtonClicked);
@@ -62,17 +67,17 @@ void UUIConnectionWidget::NativeConstruct()
 }
 
 
-void UUIConnectionWidget::OnConnectionButtonClicked(Event event)
+void UUIConnectionWidget::OnConnectionButtonClicked(EEvent event)
 {
 	switch (event) {
-	case(HOST_BUTTON):
+	case(EEvent::HOST_BUTTON):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Host Button Clicked"));
 		connectionButtonClicked->notify(event);
 		hostButton->SetVisibility(ESlateVisibility::Hidden);
 		clientButton->SetVisibility(ESlateVisibility::Hidden);
 		if (buttonsBorder) buttonsBorder->SetVisibility(ESlateVisibility::Hidden);
 		break;
-	case(CLIENT_BUTTON):
+	case(EEvent::CLIENT_BUTTON):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Client Button Clicked"));
 		connectionButtonClicked->notify(event);
 		hostButton->SetVisibility(ESlateVisibility::Hidden);
@@ -80,7 +85,7 @@ void UUIConnectionWidget::OnConnectionButtonClicked(Event event)
 		if (buttonsBorder) buttonsBorder->SetVisibility(ESlateVisibility::Hidden);
 		break;
 
-	case(CONFIRM_BUTTON):
+	case(EEvent::CONFIRM_BUTTON):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Clicked"));
 		connectionButtonClicked->notify(event);
 		break;
@@ -106,6 +111,22 @@ void  UUIConnectionWidget::setupUIObserver(AARPawn* arPawn = nullptr)
 	
 	UIObserverInstance = NewObject<UUIObserver>(this);
 	UIObserverInstance->init(currentWorld, arPawn);
+	if (!connectionButtonClicked)
+	{
+		connectionButtonClicked = NewObject<USubject>(this);
+		if (!connectionButtonClicked)
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to create connectionButtonClicked subject!"));
+			return;
+		}
+	}
+
+	if (!UIObserverInstance)
+	{
+		UIObserverInstance = NewObject<UUIObserver>(this);
+		UIObserverInstance->init(currentWorld, arPawn);
+	}
+
 	connectionButtonClicked->addObserver(UIObserverInstance);
 	
 }
@@ -113,6 +134,6 @@ void  UUIConnectionWidget::setupUIObserver(AARPawn* arPawn = nullptr)
 void UUIConnectionWidget::OnScaleSliderValueChanged(float value)
 {
 
-	connectionButtonClicked->notify(SLIDER_CHANGE, value, false);
+	connectionButtonClicked->notify(EEvent::SLIDER_CHANGE, value, false);
 	
 }

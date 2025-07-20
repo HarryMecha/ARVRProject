@@ -6,12 +6,12 @@
 #include "ARBlueprintLibrary.h"
 #include "ARSessionConfig.h"
 #include "MapSection.h"
+#include "ARVRGameManager.h"
 #include "GameFramework/Pawn.h"
 
 class UUIObserver;
 class UUIConnectionWidget;
 class UARMapSetupUI;
-class AARVRGameManager;
 
 #include "ARPawn.generated.h"
 
@@ -39,9 +39,14 @@ public:
 
 	void startARSession();
 
-	void setObjectToSpawn(AARVRGameManager::ESpawnableObject objectType)
+	void setObjectToSpawn(ESpawnableObject objectType)
 	{
 		objectToSpawn = objectType;
+	}
+
+	ESpawnableObject getObjectToSpawn()
+	{
+		return objectToSpawn;
 	}
 
 	bool getMapSpawned()
@@ -66,6 +71,12 @@ public:
 	}
 
 	void SpawnMap();
+
+	void resetSelection() 
+	{
+		currentlySelectedMapSection = nullptr;
+		objectToSpawn = ESpawnableObject::None;
+	}
 
 
 protected:
@@ -122,7 +133,7 @@ private:
 
 	bool connectionTypeSelected = false;
 
-	AARVRGameManager::ESpawnableObject objectToSpawn;
+	ESpawnableObject objectToSpawn;
 	
 	float currentMapScale = 1.0f;
 

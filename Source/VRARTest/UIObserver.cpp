@@ -26,33 +26,26 @@ void UUIObserver::init(UWorld* world, AARPawn* pawn)
 }
 
 
-void UUIObserver::onNotify(Event event, float value, bool b)
+void UUIObserver::OnNotify_Implementation(EEvent event, float value, bool b)
 {
 	switch (event)
 	{
-	case HOST_BUTTON:
+	case EEvent::HOST_BUTTON:
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Host Button Notified"));
 
 		udpManager->setDeviceTypeSelected();
 		udpManager->setHostDevice(true);
-		if (arPawn)
-		{
-			arPawn->startARSession();
-		}
 
 		break;
 
-	case CLIENT_BUTTON:
+	case EEvent::CLIENT_BUTTON:
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Client Button Notified"));
 		udpManager->setDeviceTypeSelected();
 		udpManager->setHostDevice(false);
-		if (arPawn)
-		{
-			arPawn->startARSession();
-		}
+
 		break;
 
-	case CONFIRM_BUTTON:
+	case EEvent::CONFIRM_BUTTON:
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Notified"));
 		if (!arPawn->getMapSpawned()) 
 		{
@@ -64,40 +57,49 @@ void UUIObserver::onNotify(Event event, float value, bool b)
 		}
 		break;
 
-	case SLIDER_CHANGE:
+	case EEvent::SLIDER_CHANGE:
 		if (arPawn)
 		{
 			arPawn->SetMapScale(value);
 		}
 		break;
 
-	case TREASURE_BUTTON:
-		arPawn->setObjectToSpawn(AARVRGameManager::ESpawnableObject::Chest);
+	case EEvent::TREASURE_BUTTON:
+		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("TREASURE_BUTTON case triggered"));
+		if (arPawn) {
+			arPawn->setObjectToSpawn(ESpawnableObject::Chest);
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %d"), StaticCast<uint8>(arPawn->getObjectToSpawn())));
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("ARPawn not found")));
+
+		}
 		break;
 
-	case TRAP_BUTTON:
-		arPawn->setObjectToSpawn(AARVRGameManager::ESpawnableObject::Trap);
+	case EEvent::TRAP_BUTTON:
+		arPawn->setObjectToSpawn(ESpawnableObject::Trap);
 		break;
 
-	case CONFIRM_BUTTON_MAIN:
+	case EEvent::CONFIRM_BUTTON_MAIN:
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Notified"));
 		arPawn->spawnObject();
-		arPawn->setObjectToSpawn(AARVRGameManager::ESpawnableObject::None);
+		arPawn->resetSelection();
 		break;
 
-	case LEFT_ROTATION:
+	case EEvent::LEFT_ROTATION:
 		if (arPawn)
 		{
 			arPawn->toggleMapLeftRotate(b);
 		}
 		break;
-	case RIGHT_ROTATION:
+	case EEvent::RIGHT_ROTATION:
 		if (arPawn)
 		{
 			arPawn->toggleMapRightRotate(b);
 		}
 		break;
-	case RESET_BUTTON:
+	case EEvent::RESET_BUTTON:
 		if (arPawn)
 		{
 			arPawn->resetARState();

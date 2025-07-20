@@ -1,32 +1,37 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
+// Observer.h
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UObject/NoExportTypes.h"
 #include "VRARTest.h"
-/**
- * 
- */
-enum Event {
-	HOST_BUTTON,
-	CLIENT_BUTTON,
-	CONFIRM_BUTTON,
-	SLIDER_CHANGE,
-	CONFIRM_BUTTON_MAIN,
-	TREASURE_BUTTON,
-	TRAP_BUTTON,
-	LEFT_ROTATION,
-	RIGHT_ROTATION,
-	RESET_BUTTON,
-	EMPTY
-};
+#include "Observer.generated.h"
 
-
-class Observer
+UENUM(BlueprintType)
+enum class EEvent : uint8
 {
-public:
-	virtual ~Observer() = default;
-	virtual void onNotify(Event event, float value = 0, bool b = false) = 0;
+	HOST_BUTTON        UMETA(DisplayName = "Host Button"),
+	CLIENT_BUTTON      UMETA(DisplayName = "Client Button"),
+	CONFIRM_BUTTON     UMETA(DisplayName = "Confirm Button"),
+	SLIDER_CHANGE      UMETA(DisplayName = "Slider Change"),
+	CONFIRM_BUTTON_MAIN UMETA(DisplayName = "Confirm Button Main"),
+	TREASURE_BUTTON    UMETA(DisplayName = "Treasure Button"),
+	TRAP_BUTTON        UMETA(DisplayName = "Trap Button"),
+	LEFT_ROTATION      UMETA(DisplayName = "Left Rotation"),
+	RIGHT_ROTATION     UMETA(DisplayName = "Right Rotation"),
+	RESET_BUTTON       UMETA(DisplayName = "Reset Button"),
+	EMPTY              UMETA(DisplayName = "Empty")
 };
 
+UCLASS(Abstract, Blueprintable)
+class VRARTEST_API UObserver : public UObject
+{
+	GENERATED_BODY()
+
+public:
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, Category = "Observer")
+	void OnNotify(EEvent Event, float Value = 0.f, bool b = false);
+
+	virtual void OnNotify_Implementation(EEvent Event, float Value = 0.f, bool bFlag = false) {};
+};
 

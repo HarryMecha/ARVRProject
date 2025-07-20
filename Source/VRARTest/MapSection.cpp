@@ -119,7 +119,7 @@ void AMapSection::interactionConclusion(APooledEntity* entity)
 {
     arvrmanager->interactionConclusion(entity);
     TSharedPtr<InteractionAtSectionCommand> command = MakeShared<InteractionAtSectionCommand>();
-    command->commandType = AARVRGameManager::EMessageType::InteractionAtSection;
+    command->commandType = EMessageType::InteractionAtSection;
 
     command->sequenceCount = arvrmanager->getSequenceCount();
 

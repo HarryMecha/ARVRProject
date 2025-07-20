@@ -37,46 +37,59 @@ public:
 		return confirmButton;
 	}
 
+	void resetObjectType()
+	{
+		currentlySelectedButtonType = EEvent::EMPTY;
+
+	}
+
 protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	UButton* TreasureButtonObject;
+	UButton* TreasureButton;
 
-	TPair<UButton*, EButtonState> treasureButton = MakeTuple(TreasureButtonObject, EButtonState::RECEEDED);
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
-	UButton* TrapButtonObject;
+	UButton* TrapButton;
 
-	TPair<UButton*, EButtonState> trapButton = MakeTuple(TrapButtonObject, EButtonState::RECEEDED);
+	TMap<UButton*, EButtonState> buttonStates;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UButton* confirmButton;
 
+	UPROPERTY()
 	//subject for host button clicked
-	Subject* buttonClicked = new Subject();
+	USubject* buttonClicked = nullptr;
 
+	UPROPERTY()
 	UUIObserver* UIObserverInstance;
 
-	TMap<TPair<UButton*, EButtonState>, Event> buttonList;
+	TMap<UButton*, EEvent> buttonList;
 private:
 	UFUNCTION()
 	void OnTreasureButtonClicked()
 	{
-		OnButtonClicked(TREASURE_BUTTON);
+		if (IsValid(this))
+		{
+			OnButtonClicked(EEvent::TREASURE_BUTTON);
+		}
 	}
 	UFUNCTION()
 	void OnTrapButtonClicked()
 	{
-		OnButtonClicked(TRAP_BUTTON);
+		if (IsValid(this))
+		{
+			OnButtonClicked(EEvent::TRAP_BUTTON);
+		}
 	}
 	UFUNCTION()
 	void OnConfirmButtonClicked()
 	{
-		OnButtonClicked(CONFIRM_BUTTON_MAIN);
+		OnButtonClicked(EEvent::CONFIRM_BUTTON_MAIN);
 	}
 
-	void OnButtonClicked(Event event);
+	void OnButtonClicked(EEvent event);
 
-	Event currentlySelectedButtonType = EMPTY;
+	EEvent currentlySelectedButtonType = EEvent::EMPTY;
 
 	void moveButtons();
 };

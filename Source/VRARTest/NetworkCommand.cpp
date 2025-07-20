@@ -29,8 +29,11 @@ void PlayerMovementCommand::execute(AARVRGameManager* manager)
 
 	if (characterRotationChange)
 	{
-		vrRepresentative->SetActorRelativeRotation(characterRotation);
+		FRotator adjustedRotation = characterRotation;
+		adjustedRotation.Yaw += -90.0f;
+		vrRepresentative->SetActorRelativeRotation(adjustedRotation);
 	}
+	
 
 	/*
 	if (cameraPositionChange)
@@ -43,7 +46,7 @@ void PlayerMovementCommand::execute(AARVRGameManager* manager)
 
 	if (cameraRotationChange)
 	{
-		FRotator fixedRotation = FRotator(-cameraRotation.Roll, cameraRotation.Yaw, -cameraRotation.Pitch);
+		FRotator fixedRotation = FRotator(cameraRotation.Roll, cameraRotation.Yaw, -cameraRotation.Pitch);
 		vrHead->SetRelativeRotation(fixedRotation);
 
 	}

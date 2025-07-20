@@ -20,7 +20,7 @@ AARPawn::AARPawn()
 	selectedPlane = nullptr;
 	manager = nullptr;
 	currentlySelectedMapSection = nullptr;
-	objectToSpawn = AARVRGameManager::ESpawnableObject::None;
+	objectToSpawn = ESpawnableObject::None;
 }
 
 // Called when the game starts or when spawned
@@ -39,11 +39,17 @@ void AARPawn::BeginPlay()
 	playerController = UGameplayStatics::GetPlayerController(currentWorld, 0);
 
 	connectionWidget = CreateWidget<UUIConnectionWidget>(playerController, ConnectionWidgetBlueprintClass);
-	connectionWidget->setupUIObserver(this);
-	connectionWidget->AddToViewport();	
+	if (connectionWidget)
+	{
+		connectionWidget->setupUIObserver(this);
+		connectionWidget->AddToViewport();
+	}
 
 	mapSetupWidget = CreateWidget<UARMapSetupUI>(playerController, MapSetupWidgetBlueprintClass);
-	mapSetupWidget->setupUIObserver(this);
+	if (mapSetupWidget)
+	{
+		mapSetupWidget->setupUIObserver(this);
+	}
 
 	mapLeftRotate = false;
 
@@ -108,12 +114,13 @@ void AARPawn::OnScreenTouch()
 					changeSelected(hitActor);
 				}
 				else {
-					if (!manager->vrPlayerTurn) {
+					if (manager->getCurrentTurn() == EPlayerRole::AR) {
 						if (hitActor)
 						{
 							GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %s"), *hitActor->GetName()));
+							GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %d"), StaticCast<uint8>(objectToSpawn)));
 
-							if (hitActor->IsA(AMapSection::StaticClass()) && objectToSpawn != AARVRGameManager::ESpawnableObject::None) {
+							if (hitActor->IsA(AMapSection::StaticClass()) && objectToSpawn != ESpawnableObject::None) {
 								AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
 								if (currentlySelectedMapSection == selectedMapSection) {
 									currentlySelectedMapSection->swapSelectedMaterial();
@@ -195,11 +202,12 @@ void AARPawn::SpawnMap()
 
 void AARPawn::ConfirmMapChoice() 
 {
+	
 	mapSpawned = true;
 	DestroyOldPlanes();
 	showPlanes = false;
 	TSharedPtr<arPlayerSelectionCommand> command = MakeShared<arPlayerSelectionCommand>();
-	command->commandType = AARVRGameManager::EMessageType::ARPlayerSelection;
+	command->commandType = EMessageType::ARPlayerSelection;
 	command->sequenceCount = manager->getSequenceCount();
 	manager->arPlayerPlaneSelected = true;
 	manager->clearIncomingQueue();
@@ -207,6 +215,7 @@ void AARPawn::ConfirmMapChoice()
 	manager->AddToOutgoingCommandQueue(command);
 	connectionWidget->RemoveFromViewport();
 	mapSetupWidget->AddToViewport();
+	
 }
 
 AActor* AARPawn::CreatePlaneActor(UARPlaneGeometry* planeGeometry)
@@ -329,9 +338,8 @@ void AARPawn::spawnObject()
 	manager->spawnEntityAtSection(currentlySelectedMapSection, objectToSpawn);
 	currentlySelectedMapSection->swapSelectedMaterial();
 	currentlySelectedMapSection = nullptr;
-	objectToSpawn = AARVRGameManager::ESpawnableObject::None;
-	manager->switchTurns();
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Turn Changed")));
+	objectToSpawn = ESpawnableObject::None;
+	mapSetupWidget->resetObjectType();
 }
 
 void AARPawn::SetMapScale(float newScale)

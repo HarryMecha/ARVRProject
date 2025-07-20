@@ -21,6 +21,7 @@ AARVRGameManager::AARVRGameManager()
 	udpCommunicationsManager = nullptr;
 	vrRepresenation = nullptr;
 	currentlyOccupiedSection = nullptr;
+	currentTurn = EPlayerRole::AR;
 }
 
 // Called when the game starts or when spawned
@@ -135,7 +136,7 @@ void AARVRGameManager::ManageCommandQueue()
 void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 {
 	uint8 messageTypeByte = receivedPacket[0];
-	AARVRGameManager::EMessageType messageType = static_cast<AARVRGameManager::EMessageType>(messageTypeByte);
+	EMessageType messageType = static_cast<EMessageType>(messageTypeByte);
 
 	switch (messageType) {
 		case(EMessageType::Connection):
@@ -143,11 +144,15 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 			if (udpCommunicationsManager->getConnectionEstablished() == false)
 			{
 				TArray<uint8> packet;
-				packet.Add(static_cast<uint8>(AARVRGameManager::EMessageType::Connection));
+				packet.Add(static_cast<uint8>(EMessageType::Connection));
 				packet.Add(messageSequenceCount);
 				udpCommunicationsManager->SendMessage(packet);
 				udpCommunicationsManager->setConnectionEstablished(true);
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Connection Established"));
+				if (LocalRole == EPlayerRole::AR)
+				{
+					arPawn->startARSession();
+				}
 			}
 			break;
 		} 
@@ -181,6 +186,15 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 			command->deserialise(this, receivedPacket);
 			incomingCommandQueue.Enqueue(command);
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Interaction Message Received"));
+
+			break;
+		}
+		case(EMessageType::SwitchTurns):
+		{
+			TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();
+			command->deserialise(this, receivedPacket);
+			incomingCommandQueue.Enqueue(command);
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Switch Turns Message Received"));
 
 			break;
 		}
@@ -269,26 +283,38 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 		command->objectType = objectType;
 
 		AddToOutgoingCommandQueue(command);
+
+		TSharedPtr<SwitchTurnsCommand> command2 = MakeShared<SwitchTurnsCommand>();
+		command2->commandType = EMessageType::SwitchTurns;
+
+		command2->sequenceCount = getSequenceCount();
+
+		command2->playerTurn = EPlayerRole::VR;
+
+		AddToOutgoingCommandQueue(command2);
+
+		switchTurns(EPlayerRole::VR);
 	}
-	
 }
 
-void AARVRGameManager::switchTurns() 
+void AARVRGameManager::switchTurns(EPlayerRole playerTurn)
 {
-	if (vrPlayerTurn)
+	switch (playerTurn) 
 	{
-		vrPlayerTurn = false;
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Turn Changed")));
-	}
-	else
-	{
-		vrPlayerTurn = true;
+	case(EPlayerRole::AR):
+		currentTurn = playerTurn;
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Turn Changed: AR Player")));
+		break;
+
+	case(EPlayerRole::VR):
+		currentTurn = playerTurn;
 		if (currentlyOccupiedSection)
 		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Section: %s"), *currentlyOccupiedSection->GetName()));
 			currentlyOccupiedSection->toggleWalls(false);
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Turn Changed")));
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Turn Changed: VR Player 2")));
 		}
-
+		break;
 	}
 }
 
@@ -308,12 +334,23 @@ void AARVRGameManager::interactionConclusion(APooledEntity* concludedEntity)
 	{
 		AObjectPoolActor* goblinPool = *EntityPools.Find(ESpawnableObject::Goblin);
 		goblinPool->returnToPool(concludedEntity);
-		switchTurns();
 	}
 	if (concludedEntity->IsA(AChestPooledEntity::StaticClass()))
 	{
 		AObjectPoolActor* chestPool = *EntityPools.Find(ESpawnableObject::Chest);
 		chestPool->returnToPool(concludedEntity);
-		switchTurns();
 	}
+
+	TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();
+	command->commandType = EMessageType::SwitchTurns;
+
+	command->sequenceCount = getSequenceCount();
+
+	command->playerTurn = EPlayerRole::AR;
+
+	AddToOutgoingCommandQueue(command);
+
+	switchTurns(EPlayerRole::AR);
+
+
 }

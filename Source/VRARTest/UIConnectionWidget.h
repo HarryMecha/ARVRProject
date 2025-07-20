@@ -83,7 +83,7 @@ protected:
 
 	
 	//subject for host button clicked
-	Subject* connectionButtonClicked = new Subject();
+	USubject* connectionButtonClicked = nullptr;
 
 	UPROPERTY()
 	UUIObserver* UIObserverInstance;
@@ -94,53 +94,53 @@ private:
 	UFUNCTION()
 	void OnHostButtonClicked()
 	{
-		OnConnectionButtonClicked(HOST_BUTTON);
+		OnConnectionButtonClicked(EEvent::HOST_BUTTON);
 	}
 	UFUNCTION()
 	void OnClientButtonClicked()
 	{
-		OnConnectionButtonClicked(CLIENT_BUTTON);
+		OnConnectionButtonClicked(EEvent::CLIENT_BUTTON);
 	}
 	UFUNCTION()
 	void OnConfirmButtonClicked()
 	{
-		OnConnectionButtonClicked(CONFIRM_BUTTON);
+		OnConnectionButtonClicked(EEvent::CONFIRM_BUTTON);
 	}
 	
 	UFUNCTION()
 	void OnScaleSliderValueChanged(float Value);
 
-	void OnConnectionButtonClicked(Event event);
+	void OnConnectionButtonClicked(EEvent event);
 
 	UFUNCTION()
 	void OnLeftRotateButtonPressed()
 	{
-		connectionButtonClicked->notify(LEFT_ROTATION,0,true);
+		connectionButtonClicked->notify(EEvent::LEFT_ROTATION,0,true);
 	}
 
 	UFUNCTION()
 	void OnLeftRotateButtonReleased()
 	{
-		connectionButtonClicked->notify(LEFT_ROTATION, 0, false);
+		connectionButtonClicked->notify(EEvent::LEFT_ROTATION, 0, false);
 	}
 
 	UFUNCTION()
 	void OnRightRotateButtonPressed()
 	{
-		connectionButtonClicked->notify(RIGHT_ROTATION,0, true);
+		connectionButtonClicked->notify(EEvent::RIGHT_ROTATION,0, true);
 
 	}
 
 	UFUNCTION()
 	void OnRightRotateButtonReleased()
 	{
-		connectionButtonClicked->notify(RIGHT_ROTATION, 0,false);
+		connectionButtonClicked->notify(EEvent::RIGHT_ROTATION, 0,false);
 	}
 
 	UFUNCTION()
 	void OnResetButtonClicked()
 	{
-		connectionButtonClicked->notify(RESET_BUTTON, 0, false);
+		connectionButtonClicked->notify(EEvent::RESET_BUTTON, 0, false);
 
 	}
 

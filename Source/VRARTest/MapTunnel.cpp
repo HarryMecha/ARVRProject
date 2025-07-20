@@ -184,11 +184,11 @@ void AMapTunnel::resetAllWalls()
 
 	if (frontWallState == EWallState::Up || frontWallState == EWallState::MovingUp) {
 		frontWallState = EWallState::MovingDown;
-		tunnelWallFrontCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		tunnelWallFrontCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 	if (backWallState == EWallState::Up || backWallState == EWallState::MovingUp) {
 		backWallState = EWallState::MovingDown;
-		tunnelWallBackCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		tunnelWallBackCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	}
 }

@@ -2,37 +2,48 @@
 
 #include "CoreMinimal.h"
 #include "Observer.h"
+#include "Subject.generated.h"
 
 
-
-class Subject
+UCLASS()
+class VRARTEST_API USubject : public UObject
 {
+
+	GENERATED_BODY()
+
 public:
 
-	void addObserver(Observer* observe)
+	void addObserver(UObserver* observe)
 	{
-		if (observe && !observers.Contains(observe))
+		if (observe) 
 		{
-			observers.Add(observe);
+			if (!observers.Contains(observe)) {
+				observers.Add(observe);
+			}
 		}
 	}
-	void removeObserver(Observer* observe)
+	void removeObserver(UObserver* observe)
 	{
 		observers.Remove(observe);
 	}
 
-	void notify(Event event, float value = 0, bool b = false) const
+	void notify(EEvent event, float value = 0, bool b = false) const
 	{
-		for (Observer* obs : observers)
+		for (TWeakObjectPtr<UObserver> obsPtr : observers)
 		{
-			if (obs)
+			if (obsPtr.IsValid())
 			{
-				obs->onNotify(event, value,b);
+				obsPtr->OnNotify(event, value, b);
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Observer broke")));
+
 			}
 		}
 	}
 
 private:
-	TArray<Observer*> observers;
+	TArray<TWeakObjectPtr<UObserver>> observers;
 
 };

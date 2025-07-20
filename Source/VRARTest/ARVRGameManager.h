@@ -17,10 +17,33 @@ class AMapTunnel;
 UENUM(BlueprintType)
 enum class EPlayerRole : uint8
 {
-	VR,
-	AR
+	VR UMETA(DisplayName = "VR"),
+	AR UMETA(DisplayName = "AR")
 };
 
+UENUM(BlueprintType)
+enum class EMessageType : uint8
+{
+	Connection UMETA(DisplayName = "Connection"),
+	PlayerMovement UMETA(DisplayName = "Player Movement"),
+	ObjectStateChange UMETA(DisplayName = "Object State Change"),
+	ARPlayerSelection UMETA(DisplayName = "AR Player Selection"),
+	SpawnAtSection UMETA(DisplayName = "Spawn At Section"),
+	SwitchTurns UMETA(DisplayName = "Switch Turns"),
+	InteractionAtSection UMETA(DisplayName = "Interaction At Section")
+
+};
+
+UENUM(BlueprintType)
+enum class ESpawnableObject : uint8
+{
+	Goblin UMETA(DisplayName = "Goblin"),
+	Skeleton UMETA(DisplayName = "Skeleton"),
+	Demon UMETA(DisplayName = "Demon"),
+	Chest UMETA(DisplayName = "Chest"),
+	Trap UMETA(DisplayName = "Trap"),
+	None UMETA(DisplayName = "None")
+};
 
 UCLASS()
 class VRARTEST_API AARVRGameManager : public AActor
@@ -30,30 +53,18 @@ class VRARTEST_API AARVRGameManager : public AActor
 public:	
 	// Sets default values for this actor's properties
 
-	enum class EMessageType : uint8
-	{
-		Connection = 1,
-		PlayerMovement = 2,
-		ObjectStateChange = 3,
-		ARPlayerSelection = 4,
-		SpawnAtSection = 5,
-		InteractionAtSection = 6
-	};
-
-	enum class ESpawnableObject : uint8
-	{
-		Goblin = 1,
-		Skeleton = 2,
-		Demon = 3,
-		Chest = 4,
-		Trap = 5,
-		None = 6
-	};
-
 	AARVRGameManager();
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AR/VR")
 	EPlayerRole LocalRole;
+
+	EPlayerRole currentTurn;
+
+	EPlayerRole getCurrentTurn()
+	{
+		return currentTurn;
+	}
+
 
 	AUDPCommunicationsManager* udpCommunicationsManager;
 
@@ -122,7 +133,7 @@ public:
 
 	void interactionConclusion(APooledEntity* concludedEntity);
 
-	void switchTurns();
+	void switchTurns(EPlayerRole playerTurn);
 
 protected:
 	// Called when the game starts or when spawned

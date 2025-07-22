@@ -132,7 +132,7 @@ public:
 
 	bool vrPlayerTurn = false;
 
-	void interactionConclusion(APooledEntity* concludedEntity);
+	void interactionConclusion(AActor* concludedEntity);
 
 	void switchTurns(EPlayerRole playerTurn);
 
@@ -155,10 +155,10 @@ private:
 	TMap<ESpawnableObject, AObjectPoolActor*> EntityPools;
 
 	UPROPERTY(EditAnywhere, Category = "Class Assignments")
-	TSubclassOf<APooledEntity> GoblinPooledEntityClass;
+	TSubclassOf<AActor> GoblinPooledEntityClass;
 
 	UPROPERTY(EditAnywhere, Category = "Class Assignments")
-	TSubclassOf<APooledEntity> ChestPooledEntityClass;
+	TSubclassOf<AActor> ChestPooledEntityClass;
 
 	TArray<AMapSection*> mapSections;
 };

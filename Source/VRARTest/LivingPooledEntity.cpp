@@ -2,21 +2,42 @@
 
 
 #include "LivingPooledEntity.h"
+#include "MapSection.h"
 
 ALivingPooledEntity::ALivingPooledEntity()
 {
     PrimaryActorTick.bCanEverTick = true;
 
-    USceneComponent* RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
-    RootComponent = RootScene;
+    poolComponent = CreateDefaultSubobject<UPooledEntityComponent>(TEXT("PooledEntityComponent"));
 
     // Create and attach mesh
-    mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComponent"));
-    mesh->SetupAttachment(RootComponent);
+    GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    GetMesh()->SetEnableGravity(true);
 }
 
 void ALivingPooledEntity::BeginPlay()
 {
     Super::BeginPlay();
-    mesh->PlayAnimation(idleAnimation, true);
+    GetMesh()->PlayAnimation(idleAnimation, true);
+    maxHealth = currentHealth;
+}
+
+void ALivingPooledEntity::takeDamage(float amount)
+{
+	currentHealth -= amount;
+
+	if (currentHealth <= 0.f)
+	{
+		Die();
+	}
+}
+
+// Handle death
+void ALivingPooledEntity::Die()
+{
+    AMapSection* ownerSection = getPoolInterface()->getOwnerSection();
+    if (ownerSection) {
+        ownerSection->interactionConclusion(this);
+    }
+    resetHealth();
 }

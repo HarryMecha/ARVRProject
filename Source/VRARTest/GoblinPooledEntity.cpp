@@ -6,7 +6,6 @@
 AGoblinPooledEntity::AGoblinPooledEntity()
 {
     PrimaryActorTick.bCanEverTick = true;
-   
 }
 
 

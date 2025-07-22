@@ -3,14 +3,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "PooledEntity.h"
+#include "StaticPooledEntity.h"
 #include "ChestPooledEntity.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class VRARTEST_API AChestPooledEntity : public APooledEntity
+class VRARTEST_API AChestPooledEntity : public AStaticPooledEntity
 {
 	GENERATED_BODY()
 	

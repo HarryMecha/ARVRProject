@@ -210,7 +210,7 @@ void AVRCharacter::MoveForwardBack(float strength)
 		// Get forward direction relative to the camera yaw
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
 		FVector direction = FRotationMatrix(yawRotation).GetUnitAxis(EAxis::X);
-		float movementSpeed = 0.2f;
+		float movementSpeed = 0.5f;
 		AddMovementInput(direction, strength * movementSpeed);
 	}
 }
@@ -221,7 +221,7 @@ void AVRCharacter::MoveLeftRight(float strength)
 	{
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
 		FVector direction = FRotationMatrix(yawRotation).GetUnitAxis(EAxis::Y);
-		float movementSpeed = 0.7f;
+		float movementSpeed = 0.5f;
 		AddMovementInput(direction, strength * movementSpeed);
 	}
 }

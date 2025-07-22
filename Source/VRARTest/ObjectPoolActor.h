@@ -19,13 +19,13 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	APooledEntity* getAvailableEntity();
+	AActor* getAvailableEntity();
 
-	void returnToPool(APooledEntity* entity);
+	void returnToPool(AActor* entity);
 
-	void turnOnEntity(APooledEntity* entity);
+	void turnOnEntity(AActor* entity);
 
-	void initialisePool(TSubclassOf<APooledEntity> poolTypeClass);
+	void initialisePool(TSubclassOf<AActor> poolTypeClass);
 
 protected:
 	// Called when the game starts or when spawned
@@ -36,10 +36,10 @@ private:
 	const int poolSize = 10;
 	
 	UPROPERTY(EditAnywhere, Category = "Object Pool")
-	TSubclassOf<APooledEntity> PooledEntityClass;
+	TSubclassOf<AActor> PooledEntityClass;
 	
-	TArray<APooledEntity*> EntityPool;
+	TArray<AActor*> EntityPool;
 	
-	APooledEntity* firstAvailable;
+	AActor* firstAvailable;
 
 };

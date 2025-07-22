@@ -16,14 +16,15 @@ void PlayerMovementCommand::execute(AARVRGameManager* manager)
 	{
 		vrRepresentative->SetActorRelativeLocation(characterPosition);
 	
-		if (vrBody->IsPlaying() && vrBody->AnimationData.AnimToPlay == idleAnimation)
+		if (!vrBody->IsPlaying() || vrBody->AnimationData.AnimToPlay != movingAnimation)
 		{
 			vrBody->PlayAnimation(movingAnimation, true);
 		}
+
 	}
 	else 
 	{
-		if (vrBody->IsPlaying() && vrBody->AnimationData.AnimToPlay != idleAnimation)
+		if (!vrBody->IsPlaying() || vrBody->AnimationData.AnimToPlay != idleAnimation)
 		{
 			vrBody->PlayAnimation(idleAnimation, true);
 		}

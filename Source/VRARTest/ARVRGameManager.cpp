@@ -222,12 +222,19 @@ void AARVRGameManager::clearIncomingQueue() {
 
 void AARVRGameManager::setupPools() {
 	AObjectPoolActor* goblinPool = GetWorld()->SpawnActor<AObjectPoolActor>();
-	goblinPool->initialisePool(GoblinPooledEntityClass);
-	EntityPools.Add(ESpawnableObject::Goblin, goblinPool);
+	if (goblinPool) 
+	{
+		goblinPool->initialisePool(GoblinPooledEntityClass);
+		EntityPools.Add(ESpawnableObject::Goblin, goblinPool);
+		
+	}
 
 	AObjectPoolActor* chestPool = GetWorld()->SpawnActor<AObjectPoolActor>();
-	chestPool->initialisePool(ChestPooledEntityClass);
-	EntityPools.Add(ESpawnableObject::Chest, chestPool);
+	if (chestPool) 
+	{
+		chestPool->initialisePool(ChestPooledEntityClass);
+		EntityPools.Add(ESpawnableObject::Chest, chestPool);
+	}
 }
 
 void AARVRGameManager::sortMapSections() 
@@ -250,22 +257,29 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 	switch (objectType) {
 	case(ESpawnableObject::Goblin): {
 			AObjectPoolActor* goblinPool = *EntityPools.Find(objectType);
-			APooledEntity* goblinEntity = goblinPool->getAvailableEntity();
+			AActor* goblinEntity = goblinPool->getAvailableEntity();
 			if (goblinEntity && mapSections.Contains(sectionToSpawn)) {
-
-				sectionToSpawn->spawnActorAtPoint(goblinEntity);
-				sectionToSpawn->setCurrentEntity(goblinEntity);
+				UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(goblinEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+				if (pooledComponent)
+				{
+					pooledComponent->setOwnerSection(sectionToSpawn);
+					sectionToSpawn->spawnActorAtPoint(goblinEntity);
+					sectionToSpawn->setCurrentEntity(goblinEntity);
+				}
 			}
 			break;
 		}
 		case(ESpawnableObject::Chest): {
 			AObjectPoolActor* chestPool = *EntityPools.Find(objectType);
-			APooledEntity* chestEntity = chestPool->getAvailableEntity();
+			AActor* chestEntity = chestPool->getAvailableEntity();
 			if (chestEntity && mapSections.Contains(sectionToSpawn)) {
-
-				sectionToSpawn->spawnActorAtPoint(chestEntity);
-				sectionToSpawn->setCurrentEntity(chestEntity);
-
+				UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(chestEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+				if (pooledComponent)
+				{
+					pooledComponent->setOwnerSection(sectionToSpawn);
+					sectionToSpawn->spawnActorAtPoint(chestEntity);
+					sectionToSpawn->setCurrentEntity(chestEntity);
+				}
 			}
 			break;
 		}
@@ -328,7 +342,7 @@ AMapTunnel* AARVRGameManager::getLastTunnelVisited()
 	return lastTunnelVisited;
 }
 
-void AARVRGameManager::interactionConclusion(APooledEntity* concludedEntity)
+void AARVRGameManager::interactionConclusion(AActor* concludedEntity)
 {
 	if (concludedEntity->IsA(AGoblinPooledEntity::StaticClass()))
 	{

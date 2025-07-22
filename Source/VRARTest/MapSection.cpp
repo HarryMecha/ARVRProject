@@ -115,7 +115,7 @@ void AMapSection::toggleWalls (bool toggle)
     }
 }
 
-void AMapSection::interactionConclusion(APooledEntity* entity)
+void AMapSection::interactionConclusion(AActor* entity)
 {
     arvrmanager->interactionConclusion(entity);
     TSharedPtr<InteractionAtSectionCommand> command = MakeShared<InteractionAtSectionCommand>();

@@ -29,6 +29,7 @@ void AChestPooledEntity::OnMeshBeginOverlap(UPrimitiveComponent* OverlappedCompo
 {
     if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherActor != this)
     {
+        AMapSection* ownerSection = getPoolInterface()->getOwnerSection();
         if (ownerSection) {
             ownerSection->interactionConclusion(this);
         }

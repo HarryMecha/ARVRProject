@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "MapTunnel.h"
+#include "PooledEntityInterface.h"
 #include "MapSection.generated.h"
 
 UCLASS()
@@ -49,15 +50,19 @@ public:
 		}
 	}
 
-	APooledEntity* currentEntity;
+	AActor* currentEntity;
 
-	void setCurrentEntity(APooledEntity* entity)
+	void setCurrentEntity(AActor* entity)
 	{
 		currentEntity = entity;
-		entity->setOwnerSection(this);
+		IPooledEntityInterface* poolInterface = Cast<IPooledEntityInterface>(currentEntity);
+		if (poolInterface)
+		{
+			poolInterface->setOwnerSection(this);
+		}
 	}
 
-	void interactionConclusion(APooledEntity* entity);
+	void interactionConclusion(AActor* entity);
 
 protected:
 	// Called when the game starts or when spawned

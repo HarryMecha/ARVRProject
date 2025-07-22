@@ -2,6 +2,8 @@
 
 
 #include "ObjectPoolActor.h"
+#include "PooledEntityInterface.h"
+#include "PooledEntityComponent.h"
 #include <Kismet/GameplayStatics.h>
 
 
@@ -23,7 +25,7 @@ void AObjectPoolActor::Tick(float DeltaTime)
     Super::Tick(DeltaTime);
 }
 
-void AObjectPoolActor::initialisePool(TSubclassOf<APooledEntity> poolTypeClass) 
+void AObjectPoolActor::initialisePool(TSubclassOf<AActor> poolTypeClass)
 {
     PooledEntityClass = poolTypeClass;
     TArray<AActor*> AllActors;
@@ -31,7 +33,7 @@ void AObjectPoolActor::initialisePool(TSubclassOf<APooledEntity> poolTypeClass)
     UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), AllActors);
     for (AActor* actor : AllActors)
     {
-        if (actor->Tags.Contains("MapRoot"))
+        if (actor->ActorHasTag("MapRoot"))
         {
             mapRoot = actor;
         }
@@ -39,57 +41,85 @@ void AObjectPoolActor::initialisePool(TSubclassOf<APooledEntity> poolTypeClass)
 
 
     EntityPool.SetNum(poolSize);
-
+    
     for (int i = 0; i < poolSize; i++) {
-        EntityPool[i] = GetWorld()->SpawnActor<APooledEntity>(PooledEntityClass);
-        EntityPool[i]->AttachToActor(mapRoot, FAttachmentTransformRules::KeepRelativeTransform);
-        EntityPool[i]->SetActorRelativeScale3D(FVector(1.0f));
-        EntityPool[i]->SetActorHiddenInGame(true);
-        EntityPool[i]->SetActorEnableCollision(false);
-        EntityPool[i]->SetActorTickEnabled(false);
-        EntityPool[i]->setInUse(false);
+        FActorSpawnParameters spawnParams;
+        spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+        
+        AActor* poolMember = GetWorld()->SpawnActor<AActor>(PooledEntityClass, FVector::ZeroVector, FRotator::ZeroRotator, spawnParams);
+
+        poolMember->AttachToActor(mapRoot, FAttachmentTransformRules::KeepRelativeTransform);
+        poolMember->SetActorRelativeScale3D(FVector(1.0f));
+        poolMember->SetActorHiddenInGame(true);
+        poolMember->SetActorEnableCollision(false);
+        poolMember->SetActorTickEnabled(false);
+       
+        UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(poolMember->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+        pooledComponent->setInUse(false);
+        pooledComponent->setNext(nullptr);
+        pooledComponent->setOwnerSection(nullptr);
+
+
+        EntityPool[i] = poolMember;
+    }
+    
+    for (int i = 0; i < poolSize - 1; i++)
+    {
+       UPooledEntityComponent* currentPoolComponent = Cast<UPooledEntityComponent>(EntityPool[i]->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+       UPooledEntityComponent* nextPoolComponent = Cast<UPooledEntityComponent>(EntityPool[i+1]->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+       currentPoolComponent->setNext(nextPoolComponent);
+    }
+
+    UPooledEntityComponent* poolComponent = Cast<UPooledEntityComponent>(EntityPool[poolSize - 1]->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+    if (poolComponent) {
+        poolComponent->setNext(nullptr);
+    }
+    else {
+        UE_LOG(LogTemp, Error, TEXT("Last entity in pool (%s) does not have a UPooledEntityComponent!"), *EntityPool[poolSize - 1]->GetName());
     }
 
     firstAvailable = EntityPool[0];
+    UE_LOG(LogTemp, Log, TEXT("Object pool initialized. First available entity: %s"), *firstAvailable->GetName());
 
-    for (int i = 0; i < poolSize - 1; i++) {
-        EntityPool[i]->setNext(EntityPool[i + 1]);
-    }
-
-    EntityPool[poolSize - 1]->setNext(nullptr);
 }
 
 
-APooledEntity* AObjectPoolActor::getAvailableEntity() 
+AActor* AObjectPoolActor::getAvailableEntity()
 {
     if (!firstAvailable) return nullptr;
 
-    APooledEntity* newEntity = firstAvailable;
-
-    firstAvailable = newEntity->getNext();
+    AActor* newEntity = firstAvailable;
+    UPooledEntityComponent* poolComponent = Cast<UPooledEntityComponent>(newEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+    firstAvailable = Cast<AActor>(poolComponent->getNext()->GetOwner());
     turnOnEntity(newEntity);
 
     return newEntity;
 }
 
-void AObjectPoolActor::turnOnEntity(APooledEntity* entity) 
+void AObjectPoolActor::turnOnEntity(AActor* entity) 
 {
-    entity->setInUse(true);
+    UPooledEntityComponent* poolComponent = Cast<UPooledEntityComponent>(entity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+    poolComponent->setInUse(true);
     entity->SetActorHiddenInGame(false);
     entity->SetActorEnableCollision(true);
     entity->SetActorTickEnabled(true);
 }
 
-void AObjectPoolActor::returnToPool(APooledEntity* entity) 
+void AObjectPoolActor::returnToPool(AActor* entity)
 {
-    entity->setOwnerSection(nullptr);
-    entity->setInUse(false);
+    GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Purple, FString::Printf(TEXT("Trying to return to the pool")));
+
+ 
+    UPooledEntityComponent* poolComponent = Cast<UPooledEntityComponent>(entity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+    poolComponent->setOwnerSection(nullptr);
+    poolComponent->setInUse(false);
+    poolComponent->setNext(Cast<UPooledEntityComponent>(firstAvailable->GetComponentByClass(UPooledEntityComponent::StaticClass())));
+
     entity->SetActorHiddenInGame(true);
     entity->SetActorEnableCollision(false);
     entity->SetActorTickEnabled(false);
 
-    entity->setNext(firstAvailable);
     firstAvailable = entity;
-
+ 
 }
 

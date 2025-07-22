@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "ObjectPoolActor.h"
+#include "VRRepresentative.h"
 class AVRCharacter;
 class AARPawn;
 class Command;
@@ -73,11 +74,11 @@ public:
 	AVRCharacter* vrCharacter;
 
 	UPROPERTY(EditAnywhere, Category = "Class Assignments")
-	TSubclassOf<AActor> vrRepresenationClass;
+	TSubclassOf<AVRRepresentative> vrRepresenationClass;
 	
-	AActor* vrRepresenation;
+	AVRRepresentative* vrRepresenation;
 
-	AActor* getVRRep() { return vrRepresenation; };
+	AVRRepresentative* getVRRep() { return vrRepresenation; };
 
 	virtual void Tick(float DeltaTime) override;
 

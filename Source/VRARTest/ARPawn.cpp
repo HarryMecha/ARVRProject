@@ -54,7 +54,8 @@ void AARPawn::BeginPlay()
 	mapLeftRotate = false;
 
 	mapRightRotate = false;
-
+	
+	
 }
 
 // Called every frame

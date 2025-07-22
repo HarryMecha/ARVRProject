@@ -8,6 +8,14 @@
 class AARVRGameManager;
 #include "VRCharacter.generated.h"
 
+UENUM(BlueprintType)
+enum class EObjectInHand : uint8
+{
+	Hammer UMETA(DisplayName = "Hammer"),
+	Lantern UMETA(DisplayName = "Lantern"),
+	Map UMETA(DisplayName = "Map"),
+	Sleeping UMETA(DisplayName = "Sleeping")
+};
 
 UCLASS()
 class VRARTEST_API AVRCharacter : public ACharacter
@@ -51,6 +59,12 @@ public:
 	UStaticMeshComponent* rightHandMesh;
 
 	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* leftHandHammerMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	UStaticMeshComponent* rightHandHammerMesh;
+
+	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* leftControllerRayMesh;
 
 	UPROPERTY(VisibleAnywhere)
@@ -63,10 +77,31 @@ public:
 	UStaticMesh* leftControllerClosedMesh;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mesh")
+	UStaticMesh* leftControllerHammerMesh;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mesh")
 	UStaticMesh* rightControllerOpenMesh;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mesh")
 	UStaticMesh* rightControllerClosedMesh;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mesh")
+	UStaticMesh* rightControllerHammerMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
+	class UBoxComponent* backCollider;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
+	class UBoxComponent* lanternCollider;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
+	class UBoxComponent* sleepingBagCollider;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
+	class UBoxComponent* leftControllerHammerCollider;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
+	class UBoxComponent* rightControllerHammerCollider;
 
 	AARVRGameManager* manager;
 
@@ -83,6 +118,12 @@ protected:
 	void controllerLineTrace(UMotionControllerComponent* controller);
 
 	void TurnLeftRight(float value);
+
+	UFUNCTION()
+	void OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 private:
 	APlayerController* playerController;
@@ -112,6 +153,10 @@ private:
 	bool leftControllerSelected = false;
 
 	bool rightControllerSelected = false;
+
+	bool leftControllerInBackCollider = false;
+
+	bool rightControllerInBackCollider = false;
 
 	int controllerRayLength = 500;
 

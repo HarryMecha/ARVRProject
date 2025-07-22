@@ -1,30 +1,32 @@
 #include "Command.h"
+#include "VRRepresentative.h"
 
 void PlayerMovementCommand::execute(AARVRGameManager* manager)
 {
-	AActor* vrRepresentative = manager->getVRRep();
-	UStaticMeshComponent* vrLeftHand = nullptr;
-	UStaticMeshComponent* vrRightHand = nullptr;
-	UStaticMeshComponent* vrHead = nullptr;
+	AVRRepresentative* vrRepresentative = manager->getVRRep();
+	UStaticMeshComponent* vrLeftHand = vrRepresentative->getVRLeftHand();
+	UStaticMeshComponent* vrRightHand = vrRepresentative->getVRRightHand();
+	UStaticMeshComponent* vrHead = vrRepresentative->getVRHead();
+	USkeletalMeshComponent* vrBody = vrRepresentative->getVRBody();
+	UAnimationAsset* idleAnimation = vrRepresentative->getIdleAnimation();
+	UAnimationAsset* movingAnimation = vrRepresentative->getMovingAnimation();
 
-
-	TSet<UActorComponent*> components = vrRepresentative->GetComponents();
-	for (UActorComponent* component : components)
-	{
-		if (component->ComponentTags.Contains("Head")) {
-			vrHead = Cast<UStaticMeshComponent>(component);
-		}
-
-		if (component->ComponentTags.Contains("Left Hand"))
-			vrLeftHand = Cast<UStaticMeshComponent>(component);
-
-		if (component->ComponentTags.Contains("Right Hand"))
-			vrRightHand = Cast<UStaticMeshComponent>(component);
-	}
 
 	if (characterPositionChange)
 	{
 		vrRepresentative->SetActorRelativeLocation(characterPosition);
+	
+		if (vrBody->IsPlaying() && vrBody->AnimationData.AnimToPlay == idleAnimation)
+		{
+			vrBody->PlayAnimation(movingAnimation, true);
+		}
+	}
+	else 
+	{
+		if (vrBody->IsPlaying() && vrBody->AnimationData.AnimToPlay != idleAnimation)
+		{
+			vrBody->PlayAnimation(idleAnimation, true);
+		}
 	}
 
 	if (characterRotationChange)
@@ -52,18 +54,18 @@ void PlayerMovementCommand::execute(AARVRGameManager* manager)
 	}
 
 	if (leftHandPositionChange)
-{
+	{
     // Use the same coordinate swap as the commented camera position
 		FVector fixedPosition = FVector(-leftHandPosition.Y, leftHandPosition.X, leftHandPosition.Z);
 		vrLeftHand->SetRelativeLocation(fixedPosition);
-}
+	}
 
-if (leftHandRotationChange)
-{
+	if (leftHandRotationChange)
+	{
     // Use the same rotation transformation as the working head rotation (no +180)
     FRotator fixedRotation = FRotator(-leftHandRotation.Roll, leftHandRotation.Yaw, -leftHandRotation.Pitch);
     vrLeftHand->SetRelativeRotation(fixedRotation);
-}
+	}
 
 // Apply Right Controller Transform
 if (rightHandPositionChange)

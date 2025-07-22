@@ -1,0 +1,64 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "Components/CapsuleComponent.h"
+#include "VRRepresentative.generated.h"
+
+UCLASS()
+class VRARTEST_API AVRRepresentative : public AActor
+{
+	GENERATED_BODY()
+	
+public:	
+	// Sets default values for this actor's properties
+	AVRRepresentative();
+	
+	virtual void Tick(float DeltaTime) override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VR Components")
+	UStaticMeshComponent* vrLeftHand;
+
+	UStaticMeshComponent* getVRLeftHand() { return vrLeftHand; }
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VR Components")
+	UStaticMeshComponent* vrRightHand;
+
+	UStaticMeshComponent* getVRRightHand() { return vrRightHand; }
+
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VR Components")
+	UStaticMeshComponent* vrHead;
+
+	UStaticMeshComponent* getVRHead() { return vrLeftHand; }
+
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VR Components")
+	USkeletalMeshComponent* vrBody;
+
+	USkeletalMeshComponent* getVRBody() { return vrBody; }
+
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VR Components")
+	UCapsuleComponent* capsuleCollider;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UAnimationAsset* idleAnimation;
+
+	UAnimationAsset* getIdleAnimation() { return idleAnimation; }
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UAnimationAsset* movingAnimation;
+
+	UAnimationAsset* getMovingAnimation() { return movingAnimation; }
+
+protected:
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+private:	
+	// Called every frame
+
+};

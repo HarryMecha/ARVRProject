@@ -4,10 +4,12 @@
 #include "Camera/CameraComponent.h"
 #include "MotionControllerComponent.h"
 #include "Components/SceneComponent.h"
+#include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Net/UnrealNetwork.h"
 #include "ARVRGameManager.h"
 #include "Command.h"
+#include "Components/BoxComponent.h"
 
 // Sets default values
 AVRCharacter::AVRCharacter()
@@ -34,6 +36,10 @@ AVRCharacter::AVRCharacter()
 	leftHandMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LeftHandMesh"));
 	leftHandMesh->SetupAttachment(leftController);
 
+	leftHandHammerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LeftHandHammerMesh"));
+	leftHandHammerMesh->SetupAttachment(leftController);
+
+
 	//Creates new Controller Object for the Right Controller and sets it's parent to VR Root and it's tracking to the controller
 	rightController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("RightController"));
 	rightController->SetupAttachment(GetRootComponent());
@@ -45,6 +51,10 @@ AVRCharacter::AVRCharacter()
 
 	rightHandMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RightHandMesh"));
 	rightHandMesh->SetupAttachment(rightController);
+
+	rightHandHammerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RightHandHammerMesh"));
+	rightHandHammerMesh->SetupAttachment(rightController);
+
 	
 	leftControllerRayMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LeftControllerRayMesh"));
 	leftControllerRayMesh->SetupAttachment(leftController);
@@ -56,6 +66,27 @@ AVRCharacter::AVRCharacter()
 	rightControllerRayMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	rightControllerRayMesh->SetVisibility(true);
 	rightControllerSelected = true;
+
+	backCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("BackCollider"));
+	backCollider->SetupAttachment(RootComponent);
+	backCollider->SetupAttachment(GetRootComponent());
+
+	lanternCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("LanternCollider"));
+	lanternCollider->SetupAttachment(RootComponent);
+	lanternCollider->SetupAttachment(GetRootComponent());
+
+
+	sleepingBagCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("SleepingBagCollider"));
+	sleepingBagCollider->SetupAttachment(RootComponent);
+	sleepingBagCollider->SetupAttachment(GetRootComponent());
+
+	leftControllerHammerCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftControllerHammerCollider"));
+	leftControllerHammerCollider->SetupAttachment(leftHandHammerMesh);
+
+	rightControllerHammerCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("RightControllerHammerCollider"));
+	rightControllerHammerCollider->SetupAttachment(rightHandHammerMesh);
+
+
 
 	manager = nullptr;
 }
@@ -75,6 +106,29 @@ void AVRCharacter::BeginPlay()
 
 	leftHandMesh->SetStaticMesh(leftControllerOpenMesh);
 	rightHandMesh->SetStaticMesh(rightControllerOpenMesh);
+
+	leftHandHammerMesh->SetStaticMesh(leftControllerHammerMesh);
+	leftHandHammerMesh->SetVisibility(false);
+	rightHandHammerMesh->SetStaticMesh(rightControllerHammerMesh);
+	rightHandHammerMesh->SetVisibility(false);
+
+	backCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
+	backCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
+
+	lanternCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
+	lanternCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
+
+	sleepingBagCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
+	sleepingBagCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
+
+	leftControllerHammerCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
+	leftControllerHammerCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
+	leftControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	rightControllerHammerCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
+	rightControllerHammerCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
+	rightControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 
 	AARVRGameManager* Manager = Cast<AARVRGameManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AARVRGameManager::StaticClass()));
 	if (!Manager)
@@ -205,6 +259,13 @@ void AVRCharacter::LeftTriggerPressed()
 
 	}
 
+	if (leftControllerInBackCollider)
+	{
+		leftHandHammerMesh->SetVisibility(true);
+		leftHandMesh->SetVisibility(false);
+		leftControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	}
+
 }
 
 void AVRCharacter::LeftTriggerReleased()
@@ -213,6 +274,13 @@ void AVRCharacter::LeftTriggerReleased()
 	if (leftWidgetInteraction)
 	{
 		leftWidgetInteraction->ReleasePointerKey(EKeys::LeftMouseButton);
+	}
+	if (leftHandHammerMesh->IsVisible())
+	{
+		leftHandHammerMesh->SetVisibility(false);
+		leftHandMesh->SetVisibility(true);
+		leftControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	}
 }
 
@@ -232,6 +300,13 @@ void AVRCharacter::RightTriggerPressed()
 			rightControllerRayMesh->SetVisibility(true);
 			rightWidgetInteraction->SetActive(true);
 	}
+	if (rightControllerInBackCollider)
+	{
+		rightHandHammerMesh->SetVisibility(true);
+		rightHandMesh->SetVisibility(false);
+		rightControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	}
 	
 }
 
@@ -241,6 +316,13 @@ void AVRCharacter::RightTriggerReleased()
 	if (rightWidgetInteraction)
 	{
 		rightWidgetInteraction->ReleasePointerKey(EKeys::LeftMouseButton);
+	}
+	if (rightHandHammerMesh->IsVisible())
+	{
+		rightHandHammerMesh->SetVisibility(false);
+		rightHandMesh->SetVisibility(true);
+		rightControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	}
 }
 
@@ -371,6 +453,88 @@ void AVRCharacter::hasCharacterMoved()
 		{
 			manager->AddToOutgoingCommandQueue(command);
 		}
+	}
+}
+
+void AVRCharacter::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (!OverlappedComponent)
+		return;
+
+	if (OverlappedComponent == backCollider)
+	{
+		if (OtherComp == leftHandMesh) 
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Back Collider Overlapped with Left Hand")));
+			leftControllerInBackCollider = true;
+		}
+
+		if (OtherComp == rightHandMesh) 
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Back Collider Overlapped with Right Hand")));
+			rightControllerInBackCollider = true;
+		}
+	}
+	else if (OverlappedComponent == lanternCollider)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Lantern Collider Overlapped")));
+
+	}
+	else if (OverlappedComponent == sleepingBagCollider)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Sleeping Collider Overlapped")));
+
+	}
+	else if (OverlappedComponent == leftControllerHammerCollider)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Left Hammer Collider Overlapped")));
+
+	}
+	else if (OverlappedComponent == rightControllerHammerCollider)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Right Hammer Collider Overlapped")));
+
+	}
+}
+
+void AVRCharacter::OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	if (!OverlappedComponent)
+		return;
+
+	if (OverlappedComponent == backCollider)
+	{
+		if (OtherComp == leftHandMesh)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Left Hand left Back Collider")));
+			leftControllerInBackCollider = false;
+		}
+
+		if (OtherComp == rightHandMesh)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Right Hand left Back Collider")));
+			rightControllerInBackCollider = false;
+		}
+	}
+	else if (OverlappedComponent == lanternCollider)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Lantern Collider Overlapped")));
+
+	}
+	else if (OverlappedComponent == sleepingBagCollider)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Sleeping Collider Overlapped")));
+
+	}
+	else if (OverlappedComponent == leftControllerHammerCollider)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Left Hammer Collider Exited")));
+
+	}
+	else if (OverlappedComponent == rightControllerHammerCollider)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Right Hammer Collider Exited")));
+
 	}
 }
 

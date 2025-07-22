@@ -69,7 +69,7 @@ void AARVRGameManager::BeginPlay()
 			}
 			if (vrRepresenationClass && actor->IsA(vrRepresenationClass))
 			{
-				vrRepresenation = actor;
+				vrRepresenation = Cast<AVRRepresentative>(actor);
 			}
 		}
 	}

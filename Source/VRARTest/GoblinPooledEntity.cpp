@@ -6,11 +6,13 @@
 AGoblinPooledEntity::AGoblinPooledEntity()
 {
     PrimaryActorTick.bCanEverTick = true;
+    maxHealth = 5;
+    resetHealth();
+    verticalHeartOffset = 45.0f;
 }
 
 
 void AGoblinPooledEntity::BeginPlay()
 {
     Super::BeginPlay();
-
 }

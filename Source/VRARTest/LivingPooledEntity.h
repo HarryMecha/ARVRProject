@@ -7,6 +7,7 @@
 #include "PooledEntityInterface.h"
 #include "PooledEntityComponent.h"
 #include "GameFramework/Character.h"
+#include "HeartActor.h"
 #include "LivingPooledEntity.generated.h"
 
 /**
@@ -38,10 +39,24 @@ public:
 		return Cast<IPooledEntityInterface>(poolComponent); 
 	}
 
+	TArray<AHeartActor*> heartActors;
+
+	UPROPERTY(EditAnywhere, Category = "Class Assignments")
+	TSubclassOf<AHeartActor> heartActorClass;
+
+	void CreateHealthUI();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UPooledEntityComponent* poolComponent;
+
+
+	float verticalHeartOffset = 0.0f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USceneComponent* heartRoot;
+	
 };

@@ -2,6 +2,7 @@
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "UDPCommunicationsManager.h"
 #include "UIConnectionWidget.h"
+#include "ARMapSetupUI.h"
 #include "ARPawn.h"
 #include <Kismet/GameplayStatics.h>
 
@@ -78,13 +79,15 @@ void UUIObserver::OnNotify_Implementation(EEvent event, float value, bool b)
 		break;
 
 	case EEvent::TRAP_BUTTON:
-		arPawn->setObjectToSpawn(ESpawnableObject::Trap);
+		arPawn->setObjectToSpawn(ESpawnableObject::Goblin);
 		break;
 
 	case EEvent::CONFIRM_BUTTON_MAIN:
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Notified"));
 		arPawn->spawnObject();
 		arPawn->resetSelection();
+		arPawn->getMapSetupWidget()->changeButtonVisibility(arPawn->getMapSetupWidget()->getConfirmButton());
+
 		break;
 
 	case EEvent::LEFT_ROTATION:

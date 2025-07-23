@@ -34,7 +34,7 @@ void UARMapSetupUI::NativeConstruct()
 	if (confirmButton)
 	{
 		confirmButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnConfirmButtonClicked);
-		//changeButtonVisibility(confirmButton);
+		changeButtonVisibility(confirmButton);
 	}
 
 
@@ -72,7 +72,6 @@ void UARMapSetupUI::OnButtonClicked(EEvent event)
 	case(EEvent::CONFIRM_BUTTON_MAIN):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Clicked"));
 		buttonClicked->notify(event);
-		changeButtonVisibility(confirmButton);
 		break;
 	}
 	moveButtons();
@@ -100,6 +99,8 @@ void UARMapSetupUI::moveButtons()
 
 void UARMapSetupUI::changeButtonVisibility(UButton* button)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Button Visibility Change"));
+
 	switch (button->GetVisibility()) {
 	case(ESlateVisibility::Hidden):
 		button->SetVisibility(ESlateVisibility::Visible);

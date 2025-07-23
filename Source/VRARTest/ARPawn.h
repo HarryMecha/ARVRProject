@@ -33,6 +33,8 @@ public:
 
 	UUserWidget* getConnectionWidget() const;
 
+	UARMapSetupUI* getMapSetupWidget() const;
+
 	void resetARState();
 
 	void ConfirmMapChoice();

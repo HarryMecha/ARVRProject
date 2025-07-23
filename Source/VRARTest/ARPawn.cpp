@@ -276,6 +276,11 @@ UUserWidget* AARPawn::getConnectionWidget() const
 	return connectionWidget;
 }
 
+UARMapSetupUI* AARPawn::getMapSetupWidget() const
+{
+	return mapSetupWidget;
+}
+
 void AARPawn::changeSelected(AActor* planeToChange)
 {
 	UARPlaneGeometry* planeGeometry = nullptr;

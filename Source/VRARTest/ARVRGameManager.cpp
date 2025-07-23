@@ -11,6 +11,7 @@
 #include "GoblinPooledEntity.h"
 #include "ChestPooledEntity.h"
 #include "MapTunnel.h"
+#include "ARMapSetupUI.h"
 // Sets default values
 AARVRGameManager::AARVRGameManager()
 {
@@ -265,6 +266,9 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 					pooledComponent->setOwnerSection(sectionToSpawn);
 					sectionToSpawn->spawnActorAtPoint(goblinEntity);
 					sectionToSpawn->setCurrentEntity(goblinEntity);
+					if (LocalRole == EPlayerRole::VR) {
+						Cast<AGoblinPooledEntity>(goblinEntity)->CreateHealthUI();
+					}
 				}
 			}
 			break;

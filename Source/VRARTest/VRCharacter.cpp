@@ -9,6 +9,7 @@
 #include "Net/UnrealNetwork.h"
 #include "ARVRGameManager.h"
 #include "Command.h"
+#include "LivingPooledEntity.h"
 #include "Components/BoxComponent.h"
 
 // Sets default values
@@ -488,11 +489,26 @@ void AVRCharacter::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 	else if (OverlappedComponent == leftControllerHammerCollider)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Left Hammer Collider Overlapped")));
-
+		if (OtherActor->ActorHasTag("Enemy"))
+		{
+			ALivingPooledEntity* collidedEnemy = Cast<ALivingPooledEntity>(OtherActor);
+			if(collidedEnemy)
+			{
+				collidedEnemy->takeDamage(1.0f);
+			}
+		}
 	}
 	else if (OverlappedComponent == rightControllerHammerCollider)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Right Hammer Collider Overlapped")));
+		if (OtherActor->ActorHasTag("Enemy"))
+		{
+			ALivingPooledEntity* collidedEnemy = Cast<ALivingPooledEntity>(OtherActor);
+			if (collidedEnemy)
+			{
+				collidedEnemy->takeDamage(1.0f);
+			}
+		}
 
 	}
 }
@@ -528,7 +544,6 @@ void AVRCharacter::OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* 
 	}
 	else if (OverlappedComponent == leftControllerHammerCollider)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Left Hammer Collider Exited")));
 
 	}
 	else if (OverlappedComponent == rightControllerHammerCollider)

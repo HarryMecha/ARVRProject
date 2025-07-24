@@ -11,35 +11,38 @@ AHeartActor::AHeartActor()
 
 	heartMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("HeartMesh"));
 	RootComponent = heartMesh;
-
 }
 
 // Called when the game starts or when spawned
 void AHeartActor::BeginPlay()
 {
 	Super::BeginPlay();
-	SetHeartState(EHeartFillState::FULL); // Default state
-
+	setHeartState(EHeartFillState::FULL); 
 }
 
-void AHeartActor::SetHeartState(EHeartFillState NewState)
+void AHeartActor::setHeartState(EHeartFillState newState)
 {
-    switch (NewState)
+    switch (newState)
     {
     case EHeartFillState::FULL:
         heartMesh->SetStaticMesh(fullHeartMesh);
+        currentState = EHeartFillState::FULL;
         break;
     case EHeartFillState::THREEQUARTER:
         heartMesh->SetStaticMesh(threeQuarterHeartMesh);
+        currentState = EHeartFillState::THREEQUARTER;
         break;
     case EHeartFillState::HALF:
         heartMesh->SetStaticMesh(halfHeartMesh);
+        currentState = EHeartFillState::HALF;
         break;
     case EHeartFillState::QUARTER:
         heartMesh->SetStaticMesh(quarterHeartMesh);
+        currentState = EHeartFillState::QUARTER;
         break;
     case EHeartFillState::EMPTY:
         heartMesh->SetStaticMesh(emptyHeartMesh);
+        currentState = EHeartFillState::EMPTY;
         break;
     }
 }

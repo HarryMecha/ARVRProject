@@ -7,6 +7,7 @@
 #include "Components/TextBlock.h"
 #include "Components/Button.h"
 #include "Components/Border.h"
+#include "HealthBarWidget.h"
 #include "Subject.h"
 class UUIObserver;
 class AARPawn;
@@ -43,13 +44,23 @@ public:
 
 	}
 
+	UHealthBarWidget* getOtherHealthBar()
+	{
+		return otherHealthBar;
+	}
+
 protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UButton* TreasureButton;
 
-
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UButton* TrapButton;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UHealthBarWidget* dwarfHealthBar;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UHealthBarWidget* otherHealthBar;
 
 	TMap<UButton*, EButtonState> buttonStates;
 
@@ -64,6 +75,7 @@ protected:
 	UUIObserver* UIObserverInstance;
 
 	TMap<UButton*, EEvent> buttonList;
+
 private:
 	UFUNCTION()
 	void OnTreasureButtonClicked()

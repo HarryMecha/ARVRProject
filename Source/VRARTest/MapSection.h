@@ -62,6 +62,11 @@ public:
 		}
 	}
 
+	AActor* getCurrentEntity()
+	{
+		return currentEntity;
+	}
+
 	void interactionConclusion(AActor* entity);
 
 protected:

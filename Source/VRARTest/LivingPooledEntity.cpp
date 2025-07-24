@@ -28,14 +28,41 @@ void ALivingPooledEntity::BeginPlay()
 void ALivingPooledEntity::takeDamage(float amount)
 {
 	currentHealth -= amount;
-    float Amount = amount;
+    float currentHealthAmount = currentHealth;
 
-    while (Amount > 1)
+    for (int i = heartActors.Num()-1; i >= 0; i--)
     {
-       // for(int i = heartActors)
+        if (currentHealthAmount >= 1.0f)
+        {
+            heartActors[i]->setHeartState(EHeartFillState::FULL);
+            currentHealthAmount -= 1.0f;
+        }
+        else
+        {
+            if (currentHealthAmount == 0.25f)
+            {
+                heartActors[i]->setHeartState(EHeartFillState::QUARTER);
+                currentHealthAmount = 0.0f;
+            }
+            else if (currentHealthAmount == 0.5f)
+            {
+                heartActors[i]->setHeartState(EHeartFillState::HALF);
+                currentHealthAmount = 0.0f;
+            }
+            else if (currentHealthAmount == 0.75f)
+            {
+                heartActors[i]->setHeartState(EHeartFillState::THREEQUARTER);
+                currentHealthAmount = 0.0f;
+            }
+            else
+            {
+                heartActors[i]->setHeartState(EHeartFillState::EMPTY);
+            }
+        }
     }
+    
 
-	if (currentHealth <= 0.f)
+	if (currentHealth <= 0.0f)
 	{
 		Die();
 	}
@@ -73,7 +100,7 @@ void ALivingPooledEntity::CreateHealthUI()
         {
             heart->AttachToComponent(heartRoot, FAttachmentTransformRules::KeepWorldTransform);
             heartActors.Add(heart);
-            heart->SetHeartState(EHeartFillState::FULL);
+            heart->setHeartState(EHeartFillState::FULL);
         }
     }
 }

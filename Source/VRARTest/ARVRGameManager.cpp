@@ -8,9 +8,11 @@
 #include "Kismet/GameplayStatics.h"
 #include "UDPCommunicationsManager.h"
 #include "MapSection.h"
+#include "LivingPooledEntity.h"
 #include "GoblinPooledEntity.h"
 #include "ChestPooledEntity.h"
 #include "MapTunnel.h"
+#include "HealthBarWidget.h"
 #include "ARMapSetupUI.h"
 // Sets default values
 AARVRGameManager::AARVRGameManager()
@@ -371,4 +373,25 @@ void AARVRGameManager::interactionConclusion(AActor* concludedEntity)
 	switchTurns(EPlayerRole::AR);
 
 
+}
+
+void AARVRGameManager::setCurrentlyOccupiedSection(AMapSection* section)
+{
+	currentlyOccupiedSection = section;
+	if (section->getCurrentEntity()->ActorHasTag("Enemy"))
+	{
+		ALivingPooledEntity* entity = Cast<ALivingPooledEntity>(section->getCurrentEntity());
+
+		UHealthBarWidget* healthBar = arPawn->getMapSetupWidget()->getOtherHealthBar();
+
+		if (entity->IsA(AGoblinPooledEntity::StaticClass()))
+		{
+			if (healthBar->Visibility == ESlateVisibility::Hidden) {
+				healthBar->CreateHealthBar(entity->getMaxHealth());
+				healthBar->setHealthBarHeaderText("Goblin Health:");
+				healthBar->SetVisibility(ESlateVisibility::Visible);
+			}
+		}
+
+	}
 }

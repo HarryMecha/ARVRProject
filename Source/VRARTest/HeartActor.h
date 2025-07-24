@@ -45,10 +45,17 @@ public:
 	UStaticMesh* emptyHeartMesh;
 
 	UFUNCTION(BlueprintCallable)
-	void SetHeartState(EHeartFillState NewState);
+	void setHeartState(EHeartFillState newState);
+
+	EHeartFillState getCurrentState()
+	{
+		return currentState;
+	}
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	EHeartFillState currentState;
 
 };

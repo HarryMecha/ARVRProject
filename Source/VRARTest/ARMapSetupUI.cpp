@@ -37,6 +37,18 @@ void UARMapSetupUI::NativeConstruct()
 		changeButtonVisibility(confirmButton);
 	}
 
+	if (dwarfHealthBar)
+	{
+		dwarfHealthBar->setHealthBarHeaderText("Dwarf Health:");
+		dwarfHealthBar->CreateHealthBar(5);
+	}
+
+	if (otherHealthBar)
+	{
+		otherHealthBar->setHealthBarHeaderText("??? Health:");
+		otherHealthBar->CreateHealthBar(0);
+		otherHealthBar->SetVisibility(ESlateVisibility::Hidden);
+	}
 
 }
 

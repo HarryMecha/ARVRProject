@@ -74,7 +74,6 @@ void AMapSection::swapSelectedMaterial()
 
 void AMapSection::spawnActorAtPoint(AActor* actorToSpawn)
 {
-	//actorToSpawn->AttachToActor(this, FAttachmentTransformRules::KeepWorldTransform);
 	actorToSpawn->SetActorLocation(spawnPoint->GetComponentLocation());
 
 }

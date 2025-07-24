@@ -111,10 +111,8 @@ public:
 
 	AMapSection* currentlyOccupiedSection;
 
-	void setCurrentlyOccupiedSection(AMapSection* section)
-	{
-		currentlyOccupiedSection = section;
-	}
+	void setCurrentlyOccupiedSection(AMapSection* section);
+	
 
 	AMapSection* getCurrentlyOccupiedSection()
 	{

@@ -5,6 +5,7 @@
 
 void UHealthBarWidget::CreateHealthBar(int32 maxHealth)
 {
+
     healthBar->ClearChildren();
 
     for (int32 i = 0; i < maxHealth; ++i)

@@ -378,20 +378,24 @@ void AARVRGameManager::interactionConclusion(AActor* concludedEntity)
 void AARVRGameManager::setCurrentlyOccupiedSection(AMapSection* section)
 {
 	currentlyOccupiedSection = section;
-	if (section->getCurrentEntity()->ActorHasTag("Enemy"))
-	{
-		ALivingPooledEntity* entity = Cast<ALivingPooledEntity>(section->getCurrentEntity());
+	if (LocalRole == EPlayerRole::AR) {
+		if (section->getCurrentEntity()) {
+			if (section->getCurrentEntity()->ActorHasTag("Enemy"))
+			{
+				ALivingPooledEntity* entity = Cast<ALivingPooledEntity>(section->getCurrentEntity());
 
-		UHealthBarWidget* healthBar = arPawn->getMapSetupWidget()->getOtherHealthBar();
+				UHealthBarWidget* healthBar = arPawn->getMapSetupWidget()->getOtherHealthBar();
 
-		if (entity->IsA(AGoblinPooledEntity::StaticClass()))
-		{
-			if (healthBar->Visibility == ESlateVisibility::Hidden) {
-				healthBar->CreateHealthBar(entity->getMaxHealth());
-				healthBar->setHealthBarHeaderText("Goblin Health:");
-				healthBar->SetVisibility(ESlateVisibility::Visible);
+				if (entity->IsA(AGoblinPooledEntity::StaticClass()))
+				{
+					if (healthBar->Visibility == ESlateVisibility::Hidden) {
+						healthBar->CreateHealthBar(entity->getMaxHealth());
+						healthBar->setHealthBarHeaderText("Goblin Health:");
+						healthBar->SetVisibility(ESlateVisibility::Visible);
+					}
+				}
+
 			}
 		}
-
 	}
 }

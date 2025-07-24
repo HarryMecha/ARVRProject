@@ -8,6 +8,7 @@
 #include "PooledEntityComponent.h"
 #include "GameFramework/Character.h"
 #include "HeartActor.h"
+#include "Components/SphereComponent.h"
 #include "LivingPooledEntity.generated.h"
 
 /**
@@ -23,6 +24,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimationAsset* idleAnimation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UAnimationAsset* runAnimation;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
+	UAnimationAsset* attackAnimation;
 
 	float maxHealth;
 
@@ -51,6 +58,10 @@ public:
 
 	void CreateHealthUI();
 
+	virtual void StartAttack() PURE_VIRTUAL(ALivingPooledEntity::StartAttack, );
+
+	virtual void EndAttack() PURE_VIRTUAL(ALivingPooledEntity::EndAttack, );
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -64,4 +75,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USceneComponent* heartRoot;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USphereComponent* attackRangeCollider;
+
+	UFUNCTION()
+	void OnAttackRangeOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
 };

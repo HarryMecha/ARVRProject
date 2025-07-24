@@ -3,6 +3,7 @@
 
 #include "LivingPooledEntity.h"
 #include "MapSection.h"
+#include "VRCharacter.h"
 
 ALivingPooledEntity::ALivingPooledEntity()
 {
@@ -16,6 +17,9 @@ ALivingPooledEntity::ALivingPooledEntity()
     heartRoot = CreateDefaultSubobject<USceneComponent>(TEXT("HeartRoot"));
     heartRoot->SetupAttachment(RootComponent);
     heartRoot->SetRelativeLocation(FVector(0, 0, verticalHeartOffset));
+    attackRangeCollider = CreateDefaultSubobject<USphereComponent>(TEXT("AttackCollider"));
+    attackRangeCollider->SetupAttachment(RootComponent);
+    attackRangeCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 void ALivingPooledEntity::BeginPlay()
@@ -23,6 +27,11 @@ void ALivingPooledEntity::BeginPlay()
     Super::BeginPlay();
     GetMesh()->PlayAnimation(idleAnimation, true);
     maxHealth = currentHealth;
+
+    if (attackRangeCollider)
+    {
+        attackRangeCollider->OnComponentBeginOverlap.AddDynamic(this, &ALivingPooledEntity::OnAttackRangeOverlap);
+    }
 }
 
 void ALivingPooledEntity::takeDamage(float amount)
@@ -102,5 +111,13 @@ void ALivingPooledEntity::CreateHealthUI()
             heartActors.Add(heart);
             heart->setHeartState(EHeartFillState::FULL);
         }
+    }
+}
+
+void ALivingPooledEntity::OnAttackRangeOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherActor != this)
+    {
+        GetMesh()->PlayAnimation(attackAnimation, false);
     }
 }

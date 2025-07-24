@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Components/WidgetInteractionComponent.h"
 class AARVRGameManager;
+class UVRPlayerUI;
 #include "VRCharacter.generated.h"
 
 UENUM(BlueprintType)
@@ -103,7 +104,27 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
 	class UBoxComponent* rightControllerHammerCollider;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UWidgetComponent* vrUIComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	UVRPlayerUI* vrPlayerUI;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Class Decleration")
+	TSubclassOf<UVRPlayerUI> vrPlayerUIClass;
+
 	AARVRGameManager* manager;
+
+	float maxHealth;
+
+	float getMaxHealth()
+	{
+		return maxHealth;
+	}
+
+	float currentHealth;
+
+	void takeDamage(float amount);
 
 protected:
 	// Called when the game starts or when spawned 

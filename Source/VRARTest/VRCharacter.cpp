@@ -10,7 +10,10 @@
 #include "ARVRGameManager.h"
 #include "Command.h"
 #include "LivingPooledEntity.h"
+#include "VRPlayerUI.h"
 #include "Components/BoxComponent.h"
+#include "Components/WidgetComponent.h"
+
 
 // Sets default values
 AVRCharacter::AVRCharacter()
@@ -87,8 +90,15 @@ AVRCharacter::AVRCharacter()
 	rightControllerHammerCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("RightControllerHammerCollider"));
 	rightControllerHammerCollider->SetupAttachment(rightHandHammerMesh);
 
-
-
+	vrUIComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("VRUIComponent"));
+	vrUIComponent->SetupAttachment(VRCamera);
+	vrUIComponent->SetWidgetSpace(EWidgetSpace::World);
+	vrUIComponent->SetDrawSize(FVector2D(1920, 1080));
+	vrUIComponent->SetRelativeLocation(FVector(50.f, 0.f, 0.f));
+	vrUIComponent->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
+	vrUIComponent->SetRelativeScale3D(FVector(0.01f, 0.01f, 0.01f));
+	vrUIComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
 	manager = nullptr;
 }
 
@@ -96,6 +106,20 @@ AVRCharacter::AVRCharacter()
 void AVRCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (vrPlayerUIClass)
+	{
+		UE_LOG(LogTemp, Log, TEXT("VRPlayerUI active"));
+
+		vrPlayerUI = CreateWidget<UVRPlayerUI>(GetWorld(), vrPlayerUIClass);
+
+		if (vrPlayerUI)
+		{
+			vrUIComponent->SetWidget(vrPlayerUI);
+
+		}
+	}
+
 	prevCharacterPosition = GetRootComponent()->GetComponentLocation();
 	prevCharacterRotation = GetRootComponent()->GetComponentRotation();
 	prevCameraPosition = VRCamera->GetComponentLocation();
@@ -553,5 +577,10 @@ void AVRCharacter::OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* 
 	}
 }
 
-
+void AVRCharacter::takeDamage(float amount)
+{
+	currentHealth = currentHealth - amount;
+	vrPlayerUI->getDwarfHealthBar()->updateHearts(currentHealth);
+	vrPlayerUI->getDamageFlashWidget()->PlayFlash();
+}
 

@@ -126,6 +126,8 @@ public:
 
 	void takeDamage(float amount);
 
+	void updateDamage(float health, bool isPlayer);
+
 protected:
 	// Called when the game starts or when spawned 
 	virtual void BeginPlay() override;
@@ -186,5 +188,7 @@ private:
 	float TimeSinceLastPacket = 0.0f;
 	
 	const float PacketInterval = 0.033f;
+
+	bool enemyHit = false;
 
 };

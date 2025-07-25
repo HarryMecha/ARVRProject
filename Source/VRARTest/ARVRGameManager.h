@@ -31,7 +31,8 @@ enum class EMessageType : uint8
 	ARPlayerSelection UMETA(DisplayName = "AR Player Selection"),
 	SpawnAtSection UMETA(DisplayName = "Spawn At Section"),
 	SwitchTurns UMETA(DisplayName = "Switch Turns"),
-	InteractionAtSection UMETA(DisplayName = "Interaction At Section")
+	InteractionAtSection UMETA(DisplayName = "Interaction At Section"),
+	UpdateHealth UMETA(DisplayName = "Interaction At Section")
 
 };
 
@@ -133,6 +134,10 @@ public:
 	void interactionConclusion(AActor* concludedEntity);
 
 	void switchTurns(EPlayerRole playerTurn);
+
+	void updatePlayerHealth(float amount);
+
+	void updateEnemyHealth(float amount);
 
 protected:
 	// Called when the game starts or when spawned

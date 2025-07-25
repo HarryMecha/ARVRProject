@@ -201,6 +201,15 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 
 			break;
 		}
+		case(EMessageType::UpdateHealth):
+		{
+			TSharedPtr<UpdateHealthCommand> command = MakeShared<UpdateHealthCommand>();
+			command->deserialise(this, receivedPacket);
+			incomingCommandQueue.Enqueue(command);
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Update Health Message Received"));
+
+			break;
+		}
 	}
 }
 
@@ -269,6 +278,7 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 					sectionToSpawn->spawnActorAtPoint(goblinEntity);
 					sectionToSpawn->setCurrentEntity(goblinEntity);
 					if (LocalRole == EPlayerRole::VR) {
+						Cast<AGoblinPooledEntity>(goblinEntity)->resetHealth();
 						Cast<AGoblinPooledEntity>(goblinEntity)->CreateHealthUI();
 					}
 				}
@@ -396,6 +406,25 @@ void AARVRGameManager::setCurrentlyOccupiedSection(AMapSection* section)
 				}
 
 			}
+		}
+	}
+}
+
+void AARVRGameManager::updatePlayerHealth(float amount)
+{
+	if (LocalRole == EPlayerRole::AR) {
+		arPawn->getMapSetupWidget()->getDwarfHealthBar()->updateHearts(amount);
+	}
+}
+
+void AARVRGameManager::updateEnemyHealth(float amount)
+{
+	if (LocalRole == EPlayerRole::AR) {
+		arPawn->getMapSetupWidget()->getOtherHealthBar()->updateHearts(amount);
+		if (amount <= 0)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, FString::Printf(TEXT("Enemy Destroyed")));
+			arPawn->getMapSetupWidget()->getOtherHealthBar()->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }

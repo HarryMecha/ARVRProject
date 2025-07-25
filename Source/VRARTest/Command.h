@@ -218,3 +218,55 @@ public:
 
     }
 };
+
+class UpdateHealthCommand : public Command
+{
+public:
+
+    float amount;
+
+    bool playerEffected;
+
+    virtual void execute(AARVRGameManager* manager) override
+    {
+        if (playerEffected) {
+            manager->updatePlayerHealth(amount);
+        }
+        else
+        {
+            manager->updateEnemyHealth(amount);
+        }
+    }
+
+    TArray<uint8> serialise(AARVRGameManager* manager) override
+    {
+        TArray<uint8> packet;
+        FMemoryWriter Writer(packet, true);
+
+        uint8 MessageType = static_cast<uint8>(commandType);
+        Writer.Serialize(&MessageType, sizeof(uint8));
+
+        Writer.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Writer.Serialize(&amount, sizeof(amount));
+
+        Writer.Serialize(&playerEffected, sizeof(playerEffected));
+
+        return packet;
+    }
+
+    void deserialise(AARVRGameManager* manager, TArray<uint8> packet) override
+    {
+        FMemoryReader Reader(packet, true);
+
+        Reader.Serialize(&commandType, sizeof(uint8));
+
+        Reader.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Reader.Serialize(&amount, sizeof(amount));
+
+        Reader.Serialize(&playerEffected, sizeof(playerEffected));
+
+
+    }
+};

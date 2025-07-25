@@ -97,7 +97,6 @@ void ALivingPooledEntity::Die()
     if (ownerSection) {
         ownerSection->interactionConclusion(this);
     }
-    resetHealth();
 }
 
 void ALivingPooledEntity::CreateHealthUI()

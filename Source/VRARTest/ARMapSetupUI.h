@@ -44,6 +44,11 @@ public:
 
 	}
 
+	UHealthBarWidget* getDwarfHealthBar()
+	{
+		return dwarfHealthBar;
+	}
+
 	UHealthBarWidget* getOtherHealthBar()
 	{
 		return otherHealthBar;

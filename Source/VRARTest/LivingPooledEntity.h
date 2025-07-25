@@ -48,6 +48,11 @@ public:
 
 	float currentHealth;
 
+	float getCurrentHealth()
+	{
+		return currentHealth;
+	}
+
 	void resetHealth() { currentHealth = maxHealth; }
 
 	void takeDamage(float amount);

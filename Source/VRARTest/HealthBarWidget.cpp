@@ -7,6 +7,7 @@ void UHealthBarWidget::CreateHealthBar(int32 maxHealth)
 {
 
     healthBar->ClearChildren();
+    heartWidgets.Empty();
 
     for (int32 i = 0; i < maxHealth; ++i)
     {
@@ -20,6 +21,14 @@ void UHealthBarWidget::CreateHealthBar(int32 maxHealth)
 void UHealthBarWidget::updateHearts(float currentHealth)
 {
     float currentHealthAmount = currentHealth;
+
+    GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, FString::Printf(TEXT("Enemy Current Health: %f"), currentHealthAmount));
+
+
+    for (UHeartWidget* heart : heartWidgets)
+    {
+        heart->setHeartState(EHeartFillState::EMPTY);
+    }
 
     for (int32 i = 0; i < heartWidgets.Num(); ++i)
     {

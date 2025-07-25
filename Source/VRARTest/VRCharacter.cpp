@@ -12,6 +12,7 @@
 #include "LivingPooledEntity.h"
 #include "VRPlayerUI.h"
 #include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
 
 
@@ -492,47 +493,59 @@ void AVRCharacter::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 	{
 		if (OtherComp == leftHandMesh) 
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Back Collider Overlapped with Left Hand")));
+			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Back Collider Overlapped with Left Hand")));
 			leftControllerInBackCollider = true;
 		}
 
 		if (OtherComp == rightHandMesh) 
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Back Collider Overlapped with Right Hand")));
+			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Back Collider Overlapped with Right Hand")));
 			rightControllerInBackCollider = true;
 		}
 	}
 	else if (OverlappedComponent == lanternCollider)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Lantern Collider Overlapped")));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Lantern Collider Overlapped")));
 
 	}
 	else if (OverlappedComponent == sleepingBagCollider)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Sleeping Collider Overlapped")));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Sleeping Collider Overlapped")));
 
 	}
 	else if (OverlappedComponent == leftControllerHammerCollider)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Left Hammer Collider Overlapped")));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Left Hammer Collider Overlapped")));
 		if (OtherActor->ActorHasTag("Enemy"))
 		{
 			ALivingPooledEntity* collidedEnemy = Cast<ALivingPooledEntity>(OtherActor);
 			if(collidedEnemy)
 			{
-				collidedEnemy->takeDamage(1.0f);
+				if (OtherComp->IsA(UCapsuleComponent::StaticClass())) {
+					if (enemyHit == false)
+					{
+						enemyHit = true;
+						collidedEnemy->takeDamage(1.0f);
+						updateDamage(collidedEnemy->getCurrentHealth(), false);
+					}
+				}
 			}
 		}
 	}
 	else if (OverlappedComponent == rightControllerHammerCollider)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Right Hammer Collider Overlapped")));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Right Hammer Collider Overlapped")));
 		if (OtherActor->ActorHasTag("Enemy"))
 		{
 			ALivingPooledEntity* collidedEnemy = Cast<ALivingPooledEntity>(OtherActor);
 			if (collidedEnemy)
 			{
-				collidedEnemy->takeDamage(1.0f);
+				if (enemyHit == false)
+				{
+					enemyHit = true;
+					collidedEnemy->takeDamage(1.0f);
+					updateDamage(collidedEnemy->getCurrentHealth(), false);
+				}
 			}
 		}
 
@@ -548,34 +561,39 @@ void AVRCharacter::OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* 
 	{
 		if (OtherComp == leftHandMesh)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Left Hand left Back Collider")));
+			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Left Hand left Back Collider")));
 			leftControllerInBackCollider = false;
 		}
 
 		if (OtherComp == rightHandMesh)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Right Hand left Back Collider")));
+			//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Right Hand left Back Collider")));
 			rightControllerInBackCollider = false;
 		}
 	}
 	else if (OverlappedComponent == lanternCollider)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Lantern Collider Overlapped")));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Lantern Collider Overlapped")));
 
 	}
 	else if (OverlappedComponent == sleepingBagCollider)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Sleeping Collider Overlapped")));
+		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Sleeping Collider Overlapped")));
 
 	}
 	else if (OverlappedComponent == leftControllerHammerCollider)
 	{
-
+		if (OtherActor->ActorHasTag("Enemy"))
+		{
+			enemyHit = false;
+		}
 	}
 	else if (OverlappedComponent == rightControllerHammerCollider)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Right Hammer Collider Exited")));
-
+		if (OtherActor->ActorHasTag("Enemy"))
+		{
+			enemyHit = false;
+		}
 	}
 }
 
@@ -584,5 +602,23 @@ void AVRCharacter::takeDamage(float amount)
 	currentHealth = currentHealth - amount;
 	vrPlayerUI->getDwarfHealthBar()->updateHearts(currentHealth);
 	vrPlayerUI->getDamageFlashWidget()->PlayFlash();
+
+	updateDamage(currentHealth, true);
+
+}
+
+void AVRCharacter::updateDamage(float health, bool isPlayer)
+{
+;
+	TSharedPtr<UpdateHealthCommand> command = MakeShared<UpdateHealthCommand>();
+	command->commandType = EMessageType::UpdateHealth;
+
+	command->sequenceCount = manager->getSequenceCount();
+
+	command->amount = health;
+
+	command->playerEffected = isPlayer;
+
+	manager->AddToOutgoingCommandQueue(command);
 }
 

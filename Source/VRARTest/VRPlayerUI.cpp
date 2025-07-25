@@ -12,7 +12,6 @@ void UVRPlayerUI::NativeConstruct()
     {
         UE_LOG(LogTemp, Warning, TEXT("dwarfHealthBar is valid"));
         dwarfHealthBar->setHealthBarHeaderText("Dwarf Health:");
-        dwarfHealthBar->CreateHealthBar(5);
         dwarfHealthBar->SetVisibility(ESlateVisibility::Visible);
     }
     else

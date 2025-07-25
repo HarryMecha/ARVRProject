@@ -27,6 +27,11 @@ public:
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Animation")
     bool IsAttacking = false;
 
+    void setOwningGoblin(AGoblinPooledEntity* entity)
+    {
+        OwningGoblin = entity;
+    }
+
 protected:
     UPROPERTY(BlueprintReadOnly)
     AGoblinPooledEntity* OwningGoblin;

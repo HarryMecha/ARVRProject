@@ -107,6 +107,8 @@ void AVRCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	currentHealth = 5;
+
 	if (vrPlayerUIClass)
 	{
 		UE_LOG(LogTemp, Log, TEXT("VRPlayerUI active"));
@@ -116,7 +118,7 @@ void AVRCharacter::BeginPlay()
 		if (vrPlayerUI)
 		{
 			vrUIComponent->SetWidget(vrPlayerUI);
-
+			vrPlayerUI->getDwarfHealthBar()->CreateHealthBar(currentHealth);
 		}
 	}
 

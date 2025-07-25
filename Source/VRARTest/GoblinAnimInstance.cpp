@@ -9,16 +9,27 @@ void UGoblinAnimInstance::NativeInitializeAnimation()
 {
     Super::NativeInitializeAnimation();
 
-    OwningGoblin = Cast<AGoblinPooledEntity>(TryGetPawnOwner());
+    AActor* ownerActor = GetOwningActor();
+    if (ownerActor)
+    {
+        OwningGoblin = Cast<AGoblinPooledEntity>(ownerActor);
+    }
+    if (!IsValid(OwningGoblin))
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Goblin Not Valid")));
+    }
+    else
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Goblin is Valid")));
 
+    }
 }
 
 void UGoblinAnimInstance::AnimNotify_EnableAttack()
 {
-    if (OwningGoblin)
-    {
-        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Goblin Found")));
 
+    if (IsValid(OwningGoblin))
+    {
         OwningGoblin->StartAttack();
     }
     else
@@ -26,11 +37,12 @@ void UGoblinAnimInstance::AnimNotify_EnableAttack()
         GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Orange, FString::Printf(TEXT("Goblin Not Found")));
 
     }
+  
 }
 
 void UGoblinAnimInstance::AnimNotify_DisableAttack()
 {
-    if (OwningGoblin)
+    if (IsValid(OwningGoblin))
     {
         OwningGoblin->EndAttack();
     }

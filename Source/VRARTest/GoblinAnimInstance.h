@@ -15,11 +15,17 @@ class VRARTEST_API UGoblinAnimInstance : public UAnimInstance
 public:
     virtual void NativeInitializeAnimation() override;
 
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION()
     void AnimNotify_EnableAttack();
 
-    UFUNCTION(BlueprintCallable)
+    UFUNCTION()
     void AnimNotify_DisableAttack();
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Animation")
+    bool IsRunning = false;
+
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Animation")
+    bool IsAttacking = false;
 
 protected:
     UPROPERTY(BlueprintReadOnly)

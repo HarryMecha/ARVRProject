@@ -5,6 +5,7 @@
 #include "MapSection.h"
 #include "VRCharacter.h"
 
+
 ALivingPooledEntity::ALivingPooledEntity()
 {
     PrimaryActorTick.bCanEverTick = true;
@@ -20,18 +21,30 @@ ALivingPooledEntity::ALivingPooledEntity()
     attackRangeCollider = CreateDefaultSubobject<USphereComponent>(TEXT("AttackCollider"));
     attackRangeCollider->SetupAttachment(RootComponent);
     attackRangeCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+    chaseRangeCollider = CreateDefaultSubobject<USphereComponent>(TEXT("ChaseCollider"));
+    chaseRangeCollider->SetupAttachment(RootComponent);
+    chaseRangeCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 }
 
 void ALivingPooledEntity::BeginPlay()
 {
     Super::BeginPlay();
-    GetMesh()->PlayAnimation(idleAnimation, true);
     maxHealth = currentHealth;
 
     if (attackRangeCollider)
     {
         attackRangeCollider->OnComponentBeginOverlap.AddDynamic(this, &ALivingPooledEntity::OnAttackRangeOverlap);
+        attackRangeCollider->OnComponentEndOverlap.AddDynamic(this, &ALivingPooledEntity::OnAttackRangeExitOverlap);
+
     }
+    if (chaseRangeCollider)
+    {
+        chaseRangeCollider->OnComponentBeginOverlap.AddDynamic(this, &ALivingPooledEntity::OnChaseRangeOverlap);
+        chaseRangeCollider->OnComponentEndOverlap.AddDynamic(this, &ALivingPooledEntity::OnChaseRangeExitOverlap);
+
+    }
+   
+    currentState = ELivingEntityState::Idle;
 }
 
 void ALivingPooledEntity::takeDamage(float amount)
@@ -118,6 +131,36 @@ void ALivingPooledEntity::OnAttackRangeOverlap(UPrimitiveComponent* OverlappedCo
 {
     if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherActor != this)
     {
-        GetMesh()->PlayAnimation(attackAnimation, false);
+        changeState(ELivingEntityState::Attacking);
+        playerInAttackCollider = true;
+    }
+}
+
+void ALivingPooledEntity::OnAttackRangeExitOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+    if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherActor != this)
+    {
+        changeState(ELivingEntityState::Chasing);
+        playerInAttackCollider = false;
+
+    }
+}
+
+void ALivingPooledEntity::OnChaseRangeOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+    if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherActor != this)
+    {
+        changeState(ELivingEntityState::Chasing);
+        playerInChaseCollider = true;
+
+    }
+}
+
+void ALivingPooledEntity::OnChaseRangeExitOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+    if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherActor != this)
+    {
+        changeState(ELivingEntityState::Idle);
+        playerInChaseCollider = false;
     }
 }

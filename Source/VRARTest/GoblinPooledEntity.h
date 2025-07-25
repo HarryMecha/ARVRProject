@@ -22,6 +22,8 @@ public:
 
 	void EndAttack() override;
 
+	void changeState(ELivingEntityState newState) override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -31,4 +33,20 @@ protected:
 
 	UFUNCTION()
 	void OnLeftHandOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	void PlayAttackAnimation();
+
+	void PlayIdleAnimation();
+
+	void PlayRunAnimation();
+
+	UFUNCTION()
+	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	bool isChasing;
+
+	bool isAttacking;
+
+	bool playerBeenAttacked = false;
+
 };

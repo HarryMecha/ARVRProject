@@ -11,6 +11,14 @@
 #include "Components/SphereComponent.h"
 #include "LivingPooledEntity.generated.h"
 
+UENUM(BlueprintType)
+enum class ELivingEntityState : uint8
+{
+	Idle UMETA(DisplayName = "Idle"),
+	Chasing  UMETA(DisplayName = "Chasing"),
+	Attacking  UMETA(DisplayName = "Attacking")
+};
+
 /**
  * 
  */
@@ -29,7 +37,7 @@ public:
 	UAnimationAsset* runAnimation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
-	UAnimationAsset* attackAnimation;
+	UAnimMontage* attackMontage;
 
 	float maxHealth;
 
@@ -62,6 +70,8 @@ public:
 
 	virtual void EndAttack() PURE_VIRTUAL(ALivingPooledEntity::EndAttack, );
 
+	virtual void changeState(ELivingEntityState newState) PURE_VIRTUAL(ALivingPooledEntity::changeState, );
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -78,7 +88,24 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USphereComponent* attackRangeCollider;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USphereComponent* chaseRangeCollider;
+
 	UFUNCTION()
 	void OnAttackRangeOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
+	UFUNCTION()
+	void OnChaseRangeOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void OnAttackRangeExitOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	UFUNCTION()
+	void OnChaseRangeExitOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	ELivingEntityState currentState;
+
+	bool playerInChaseCollider = false;
+
+	bool playerInAttackCollider = false;
 };

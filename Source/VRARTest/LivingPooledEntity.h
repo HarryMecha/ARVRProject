@@ -75,7 +75,7 @@ public:
 
 	virtual void EndAttack() PURE_VIRTUAL(ALivingPooledEntity::EndAttack, );
 
-	virtual void changeState(ELivingEntityState newState) PURE_VIRTUAL(ALivingPooledEntity::changeState, );
+	virtual void changeState(ELivingEntityState newState, AActor* player = nullptr) PURE_VIRTUAL(ALivingPooledEntity::changeState, );
 
 protected:
 	// Called when the game starts or when spawned

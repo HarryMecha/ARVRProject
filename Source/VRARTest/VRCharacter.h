@@ -59,6 +59,12 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* rightHandMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
+	class UBoxComponent* leftHandCollider;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
+	class UBoxComponent* rightHandCollider;
+
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* leftHandHammerMesh;
 
@@ -92,12 +98,13 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
 	class UBoxComponent* backCollider;
 
+	/*
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
 	class UBoxComponent* lanternCollider;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
 	class UBoxComponent* sleepingBagCollider;
-
+	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
 	class UBoxComponent* leftControllerHammerCollider;
 

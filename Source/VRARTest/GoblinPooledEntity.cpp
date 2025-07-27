@@ -4,6 +4,7 @@
 #include "GoblinPooledEntity.h"
 #include "GoblinAnimInstance.h"
 #include "VRCharacter.h"
+#include "LivingEntityAIController.h"
 
 AGoblinPooledEntity::AGoblinPooledEntity()
 {
@@ -31,6 +32,14 @@ void AGoblinPooledEntity::BeginPlay()
     {
         AnimInstance->OnMontageEnded.AddDynamic(this, &AGoblinPooledEntity::OnAttackMontageEnded);
     }
+
+}
+
+void AGoblinPooledEntity::PossessedBy(AController* NewController)
+{
+    Super::PossessedBy(NewController);
+
+    AIController = Cast<ALivingEntityAIController>(NewController);
 }
 
 void AGoblinPooledEntity::StartAttack() 
@@ -60,24 +69,35 @@ void AGoblinPooledEntity::OnLeftHandOverlap(UPrimitiveComponent* OverlappedComp,
     
 }
 
-void AGoblinPooledEntity::changeState(ELivingEntityState newState)
+void AGoblinPooledEntity::changeState(ELivingEntityState newState, AActor* player)
 {
     currentState = newState;
 
     switch (currentState)
     {
     case ELivingEntityState::Idle:
-        //StopMovement();
+        if (AIController)
+        {
+            AIController->StopChasingTarget();
+        }
         PlayIdleAnimation();
         break;
 
     case ELivingEntityState::Chasing:
-       //MoveToPlayer();
+    {
+        if (AIController && player)
+        {
+            AIController->ChaseTarget(player);
+        }
         PlayRunAnimation();
+    }
         break;
 
     case ELivingEntityState::Attacking:
-        //StopMovement();
+        if (AIController)
+        {
+            AIController->StopChasingTarget();
+        }
         PlayAttackAnimation();
         break;
     }

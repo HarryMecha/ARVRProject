@@ -7,6 +7,7 @@
 #include "VRCharacter.h" 
 #include "ARVRGameManager.h"
 #include "Command.h"
+#include "TorchActor.h"
 
 
 
@@ -30,6 +31,9 @@ AMapSection::AMapSection()
     boxColliderSection = CreateDefaultSubobject<UBoxComponent>(TEXT("boxColliderSection"));
     boxColliderSection->SetupAttachment(RootComponent);
 
+    torchHolder = CreateDefaultSubobject<USceneComponent>(TEXT("TorchHolder"));
+    torchHolder->SetupAttachment(RootComponent);
+
     currentEntity = nullptr;
 
 }
@@ -39,11 +43,11 @@ void AMapSection::BeginPlay()
 {
     Super::BeginPlay();
     boxColliderSection->OnComponentBeginOverlap.AddDynamic(this, &AMapSection::OverlapBegin);
-    TArray<AActor*> children;
-    GetAllChildActors(children);
-    if (children.Num() > 0)
+    TArray<AActor*> childActors;
+    GetAllChildActors(childActors);
+    if (childActors.Num() > 0)
     {
-        for (AActor* child : children) {
+        for (AActor* child : childActors) {
             if (!mapMesh) {
                 mapMesh = Cast<UStaticMeshComponent>(child->GetComponentByClass(UStaticMeshComponent::StaticClass()));
                 GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Found Mesh: %s"), *child->GetName()));
@@ -51,7 +55,30 @@ void AMapSection::BeginPlay()
             }
         }
     }
+
+    childActors.Empty();
+    GetAllChildActors(childActors);
+
+    for (AActor* child : childActors)
+    {
+        ATorchActor* torch = Cast<ATorchActor>(child);
+        if (IsValid(torch))
+        {
+            torchArray.Add(torch);
+        }
+    }
+
+    for (int32 i = 0; i < torchArray.Num(); ++i)
+    {
+        ATorchActor* torch = torchArray[i];
+        if (!IsValid(torch))
+        {
+            torchArray.Remove(torch);
+        }
+    }
+
 }
+
 
 // Called every frame
 void AMapSection::Tick(float DeltaTime)
@@ -86,6 +113,20 @@ void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor*
         if (arvrmanager->getCurrentlyOccupiedSection() != this) {
           toggleWalls(true);
           arvrmanager->setCurrentlyOccupiedSection(this);
+          if (!sectionVisited)
+          {
+              sectionVisited = true;
+              if (OtherActor->IsA(AVRCharacter::StaticClass()))
+              {
+                  for (ATorchActor* torch : torchArray)
+                  {
+                      if (IsValid(torch))
+                      {
+                          torch->toggleLight();
+                      }
+                  }
+              }
+          }
         }
     }
 }

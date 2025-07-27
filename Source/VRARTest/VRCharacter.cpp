@@ -44,6 +44,8 @@ AVRCharacter::AVRCharacter()
 	leftHandHammerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LeftHandHammerMesh"));
 	leftHandHammerMesh->SetupAttachment(leftController);
 
+	leftHandCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftHandCollider"));
+	leftHandCollider->SetupAttachment(leftController);
 
 	//Creates new Controller Object for the Right Controller and sets it's parent to VR Root and it's tracking to the controller
 	rightController = CreateDefaultSubobject<UMotionControllerComponent>(TEXT("RightController"));
@@ -60,7 +62,9 @@ AVRCharacter::AVRCharacter()
 	rightHandHammerMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("RightHandHammerMesh"));
 	rightHandHammerMesh->SetupAttachment(rightController);
 
-	
+	rightHandCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("RightHandCollider"));
+	rightHandCollider->SetupAttachment(rightController);
+
 	leftControllerRayMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("LeftControllerRayMesh"));
 	leftControllerRayMesh->SetupAttachment(leftController);
 	leftControllerRayMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -76,6 +80,7 @@ AVRCharacter::AVRCharacter()
 	backCollider->SetupAttachment(RootComponent);
 	backCollider->SetupAttachment(GetRootComponent());
 
+	/*
 	lanternCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("LanternCollider"));
 	lanternCollider->SetupAttachment(RootComponent);
 	lanternCollider->SetupAttachment(GetRootComponent());
@@ -84,6 +89,7 @@ AVRCharacter::AVRCharacter()
 	sleepingBagCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("SleepingBagCollider"));
 	sleepingBagCollider->SetupAttachment(RootComponent);
 	sleepingBagCollider->SetupAttachment(GetRootComponent());
+	*/
 
 	leftControllerHammerCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftControllerHammerCollider"));
 	leftControllerHammerCollider->SetupAttachment(leftHandHammerMesh);
@@ -143,11 +149,13 @@ void AVRCharacter::BeginPlay()
 	backCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
 	backCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
 
+	/*
 	lanternCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
 	lanternCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
 
 	sleepingBagCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
 	sleepingBagCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
+	*/
 
 	leftControllerHammerCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
 	leftControllerHammerCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
@@ -503,6 +511,7 @@ void AVRCharacter::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 			rightControllerInBackCollider = true;
 		}
 	}
+	/*
 	else if (OverlappedComponent == lanternCollider)
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Lantern Collider Overlapped")));
@@ -513,6 +522,7 @@ void AVRCharacter::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Sleeping Collider Overlapped")));
 
 	}
+	*/
 	else if (OverlappedComponent == leftControllerHammerCollider)
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Left Hammer Collider Overlapped")));
@@ -571,6 +581,7 @@ void AVRCharacter::OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* 
 			rightControllerInBackCollider = false;
 		}
 	}
+	/*
 	else if (OverlappedComponent == lanternCollider)
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Lantern Collider Overlapped")));
@@ -581,6 +592,7 @@ void AVRCharacter::OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* 
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Sleeping Collider Overlapped")));
 
 	}
+	*/
 	else if (OverlappedComponent == leftControllerHammerCollider)
 	{
 		if (OtherActor->ActorHasTag("Enemy"))

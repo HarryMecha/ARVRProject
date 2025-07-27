@@ -130,16 +130,21 @@ void AMapTunnel::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* 
 			if (distanceFromFront < distanceFromBack)
 			{
 				fogSystemFront->SetActive(false);
+				fogSystemBack->SetActive(false);
 				tunnelWallFrontCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 				frontWallState = EWallState::MovingUp;
 				manager->setLastTunnelVisited(this);
+				manager->rotateEntityToPlayer(this);
 			}
 			else
 			{
+				fogSystemFront->SetActive(false);
 				fogSystemBack->SetActive(false);
 				tunnelWallBackCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 				backWallState = EWallState::MovingUp;
 				manager->setLastTunnelVisited(this);
+				manager->rotateEntityToPlayer(this);
+
 			}
 		}
 	}
@@ -150,18 +155,7 @@ void AMapTunnel::OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* Ot
 	if (OtherActor->IsA(AVRCharacter::StaticClass())|| OtherActor->Tags.Contains("VRRep"))
 	{
 		 if (OverlappedComponent == boxColliderInner) {
-			if (tunnelWallFrontCollider->IsCollisionEnabled())
-			{
-				fogSystemBack->SetActive(false);
 				tunnelVisited = true;
-
-			}
-			else if (tunnelWallBackCollider->IsCollisionEnabled())
-			{
-				fogSystemFront->SetActive(false);
-				tunnelVisited = true;
-
-			}
 		}
 	}
 }

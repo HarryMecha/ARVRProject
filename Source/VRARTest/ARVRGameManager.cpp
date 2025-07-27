@@ -428,3 +428,31 @@ void AARVRGameManager::updateEnemyHealth(float amount)
 		}
 	}
 }
+
+void AARVRGameManager::rotateEntityToPlayer(AMapTunnel* tunnel)
+{
+	for (AMapSection* section : mapSections)
+	{
+
+		if (section->getConnectedTunnels().Contains(tunnel))
+		{
+
+			if (section != currentlyOccupiedSection) {
+
+				AActor* currentEntity = section->getCurrentEntity();
+
+				if (currentEntity) {
+
+					FVector entityLocation = currentEntity->GetActorLocation();
+					FVector targetLocation = tunnel->GetActorLocation();
+
+					FRotator lookAtRotation = (targetLocation - entityLocation).Rotation();
+
+					FRotator flatRotation = FRotator(0.f, lookAtRotation.Yaw, 0.f);
+
+					currentEntity->SetActorRotation(flatRotation);
+				}
+			}
+		}
+	}
+}

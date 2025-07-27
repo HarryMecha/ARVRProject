@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "LivingPooledEntity.h"
 #include "Components/BoxComponent.h"
+class ALivingEntityAIController;
 #include "GoblinPooledEntity.generated.h"
 
 /**
@@ -22,11 +23,13 @@ public:
 
 	void EndAttack() override;
 
-	void changeState(ELivingEntityState newState) override;
+	void changeState(ELivingEntityState newState, AActor* player = nullptr) override;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	virtual void PossessedBy(AController* NewController) override;
 
 	UPROPERTY(VisibleAnywhere)
 	UBoxComponent* LeftHandCollider;
@@ -48,5 +51,7 @@ protected:
 	bool isAttacking;
 
 	bool playerBeenAttacked = false;
+
+	ALivingEntityAIController* AIController;
 
 };

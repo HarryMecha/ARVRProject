@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "MapTunnel.h"
+class ATorchActor;
 #include "PooledEntityInterface.h"
 #include "MapSection.generated.h"
 
@@ -31,6 +32,14 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tunnels")
 	TArray<AMapTunnel*> connectedTunnels; 
+
+	TArray<AMapTunnel*> getConnectedTunnels()
+	{
+		return connectedTunnels;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Torch Array")
+	TArray<ATorchActor*> torchArray;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
 	class UBoxComponent* boxColliderSection;
@@ -69,6 +78,8 @@ public:
 
 	void interactionConclusion(AActor* entity);
 
+	bool sectionVisited = false;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -81,6 +92,10 @@ protected:
 
 	UFUNCTION()
 	void OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	UPROPERTY(EditAnywhere, Category = "Torch")
+	USceneComponent* torchHolder;
+
 
 private:	
 

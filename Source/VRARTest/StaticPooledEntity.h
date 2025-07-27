@@ -32,8 +32,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UPooledEntityComponent* poolComponent;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Components")
-	UStaticMeshComponent* entityMesh;
 
 private:	
 	// Called every frame

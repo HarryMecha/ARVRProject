@@ -139,9 +139,8 @@ void ALivingPooledEntity::OnAttackRangeExitOverlap(UPrimitiveComponent* Overlapp
 {
     if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherActor != this)
     {
-        changeState(ELivingEntityState::Chasing);
+        changeState(ELivingEntityState::Chasing, OtherActor);
         playerInAttackCollider = false;
-
     }
 }
 
@@ -149,7 +148,7 @@ void ALivingPooledEntity::OnChaseRangeOverlap(UPrimitiveComponent* OverlappedCom
 {
     if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherActor != this)
     {
-        changeState(ELivingEntityState::Chasing);
+        changeState(ELivingEntityState::Chasing, OtherActor);
         playerInChaseCollider = true;
 
     }

@@ -14,6 +14,7 @@
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
+#include "PowerUpSelectionMenu.h"
 
 
 // Sets default values
@@ -80,17 +81,6 @@ AVRCharacter::AVRCharacter()
 	backCollider->SetupAttachment(RootComponent);
 	backCollider->SetupAttachment(GetRootComponent());
 
-	/*
-	lanternCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("LanternCollider"));
-	lanternCollider->SetupAttachment(RootComponent);
-	lanternCollider->SetupAttachment(GetRootComponent());
-
-
-	sleepingBagCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("SleepingBagCollider"));
-	sleepingBagCollider->SetupAttachment(RootComponent);
-	sleepingBagCollider->SetupAttachment(GetRootComponent());
-	*/
-
 	leftControllerHammerCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("LeftControllerHammerCollider"));
 	leftControllerHammerCollider->SetupAttachment(leftHandHammerMesh);
 
@@ -105,6 +95,12 @@ AVRCharacter::AVRCharacter()
 	vrUIComponent->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
 	vrUIComponent->SetRelativeScale3D(FVector(0.01f, 0.01f, 0.01f));
 	vrUIComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	powerUpMenuComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("PowerUpMenuComponent"));
+	powerUpMenuComponent->SetupAttachment(leftHandMesh);
+	powerUpMenuComponent->SetDrawSize(FVector2D(1000, 1000));
+	powerUpMenuComponent->SetWidgetSpace(EWidgetSpace::World);
+	powerUpMenuComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
 	manager = nullptr;
 }
@@ -118,14 +114,25 @@ void AVRCharacter::BeginPlay()
 
 	if (vrPlayerUIClass)
 	{
-		UE_LOG(LogTemp, Log, TEXT("VRPlayerUI active"));
-
 		vrPlayerUI = CreateWidget<UVRPlayerUI>(GetWorld(), vrPlayerUIClass);
 
 		if (vrPlayerUI)
 		{
 			vrUIComponent->SetWidget(vrPlayerUI);
 			vrPlayerUI->getDwarfHealthBar()->CreateHealthBar(currentHealth);
+			vrPlayerUI->getPowerUpBar()->CreatePowerUpBar();
+		}
+	}
+
+	if (powerUpSelectionMenuClass)
+	{
+		powerUpSelectionMenu = CreateWidget<UPowerUpSelectionMenu>(GetWorld(), powerUpSelectionMenuClass);
+
+		if (powerUpSelectionMenu)
+		{
+			powerUpMenuComponent->SetWidget(powerUpSelectionMenu);
+			powerUpSelectionMenu->SetVisibility(ESlateVisibility::Hidden);
+
 		}
 	}
 
@@ -228,6 +235,9 @@ void AVRCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAxis("MoveForwardBack", this, &AVRCharacter::MoveForwardBack);
 	PlayerInputComponent->BindAxis("MoveLeftRight", this, &AVRCharacter::MoveLeftRight);
 
+	PlayerInputComponent->BindAxis("MoveForwardBack", this, &AVRCharacter::HandleMenuAxisX);
+	PlayerInputComponent->BindAxis("MoveLeftRight", this, &AVRCharacter::HandleMenuAxisY);
+
 	PlayerInputComponent->BindAxis("TurnLeftRight", this, &AVRCharacter::TurnLeftRight);
 
 	PlayerInputComponent->BindAction("UIInteractLeftTrigger", IE_Pressed, this, &AVRCharacter::LeftTriggerPressed);
@@ -236,12 +246,13 @@ void AVRCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAction("UIInteractRightTrigger", IE_Pressed, this, &AVRCharacter::RightTriggerPressed);
 	PlayerInputComponent->BindAction("UIInteractRightTrigger", IE_Released, this, &AVRCharacter::RightTriggerReleased);
 
+	PlayerInputComponent->BindAction("PowerUpMenuOpen", IE_Pressed, this, &AVRCharacter::MenuOpenButtonPressed);
 
 }
 
 void AVRCharacter::MoveForwardBack(float strength)
 {
-	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER)
+	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen)
 	{
 		// Get forward direction relative to the camera yaw
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
@@ -253,7 +264,7 @@ void AVRCharacter::MoveForwardBack(float strength)
 
 void AVRCharacter::MoveLeftRight(float strength)
 {
-	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER)
+	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen)
 	{
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
 		FVector direction = FRotationMatrix(yawRotation).GetUnitAxis(EAxis::Y);
@@ -264,7 +275,7 @@ void AVRCharacter::MoveLeftRight(float strength)
 
 void AVRCharacter::TurnLeftRight(float value)
 {
-	if (Controller && FMath::Abs(value) > KINDA_SMALL_NUMBER)
+	if (Controller && FMath::Abs(value) > KINDA_SMALL_NUMBER && !powerUpMenuOpen)
 	{
 		float turnRate = 45.0f;
 		float deltaTime = GetWorld()->GetDeltaSeconds();
@@ -273,6 +284,48 @@ void AVRCharacter::TurnLeftRight(float value)
 
 		AddControllerYawInput(value * turnRate * deltaTime);
 
+	}
+}
+
+void AVRCharacter::HandleMenuAxisX(float value)
+{
+	if (powerUpMenuOpen && powerUpSelectionMenu)
+	{
+		StickInput.X = value;
+		getMenuSelectionIndex();
+	}
+}
+
+void AVRCharacter::HandleMenuAxisY(float value)
+{
+	if (powerUpMenuOpen && powerUpSelectionMenu)
+	{
+		StickInput.Y = value;
+		getMenuSelectionIndex();
+	}
+}
+
+void AVRCharacter::getMenuSelectionIndex()
+{
+	if (powerUpMenuOpen && StickInput.Size() > 0.5)
+	{
+
+
+		float angleRadians = FMath::Atan2(StickInput.Y, StickInput.X);
+		float angleDegrees = FMath::RadiansToDegrees(angleRadians);
+		angleDegrees = FMath::Fmod(angleDegrees + 360.0f, 360.0f);
+
+		float anglesize = 72.0f;
+
+		int newIndex = FMath::FloorToInt(angleDegrees / anglesize) % 5;
+
+		if (newIndex != currentSelectedIndex)
+		{
+			currentSelectedIndex = newIndex;
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("currentSelectedIndex: %d"), currentSelectedIndex));
+
+			powerUpSelectionMenu->highlightSlice(currentSelectedIndex);
+		}
 	}
 }
 
@@ -359,6 +412,22 @@ void AVRCharacter::RightTriggerReleased()
 		rightHandMesh->SetVisibility(true);
 		rightControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	}
+}
+
+void AVRCharacter::MenuOpenButtonPressed()
+{
+	if (!powerUpMenuOpen)
+	{
+		powerUpMenuOpen = true;
+		powerUpSelectionMenu->reloadMenu(numberOfHammerPU, numberOfSpeedPU, numberOfPotionPU, numberOfLanternPU);
+		powerUpSelectionMenu->SetVisibility(ESlateVisibility::Visible);
+	}
+	else
+	{
+		powerUpMenuOpen = false;
+		powerUpSelectionMenu->SetVisibility(ESlateVisibility::Hidden);
+		activatePowerUp();
 	}
 }
 
@@ -511,34 +580,27 @@ void AVRCharacter::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 			rightControllerInBackCollider = true;
 		}
 	}
-	/*
-	else if (OverlappedComponent == lanternCollider)
-	{
-		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Lantern Collider Overlapped")));
 
-	}
-	else if (OverlappedComponent == sleepingBagCollider)
-	{
-		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Sleeping Collider Overlapped")));
-
-	}
-	*/
 	else if (OverlappedComponent == leftControllerHammerCollider)
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Left Hammer Collider Overlapped")));
 		if (OtherActor->ActorHasTag("Enemy"))
 		{
 			ALivingPooledEntity* collidedEnemy = Cast<ALivingPooledEntity>(OtherActor);
-			if(collidedEnemy)
+			if (collidedEnemy && OtherComp->IsA(UCapsuleComponent::StaticClass()))
 			{
-				if (OtherComp->IsA(UCapsuleComponent::StaticClass())) {
 					if (enemyHit == false)
 					{
 						enemyHit = true;
-						collidedEnemy->takeDamage(1.0f);
+						if (hammerPowerUp == true) {
+							collidedEnemy->takeDamage(2.0f);
+						}
+						else
+						{
+							collidedEnemy->takeDamage(1.0f);
+						}
 						updateDamage(collidedEnemy->getCurrentHealth(), false);
 					}
-				}
 			}
 		}
 	}
@@ -548,12 +610,18 @@ void AVRCharacter::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 		if (OtherActor->ActorHasTag("Enemy"))
 		{
 			ALivingPooledEntity* collidedEnemy = Cast<ALivingPooledEntity>(OtherActor);
-			if (collidedEnemy)
+			if (collidedEnemy && OtherComp->IsA(UCapsuleComponent::StaticClass()))
 			{
 				if (enemyHit == false)
 				{
 					enemyHit = true;
-					collidedEnemy->takeDamage(1.0f);
+					if (hammerPowerUp == true) {
+						collidedEnemy->takeDamage(2.0f);
+					}
+					else
+					{
+						collidedEnemy->takeDamage(1.0f);
+					}
 					updateDamage(collidedEnemy->getCurrentHealth(), false);
 				}
 			}
@@ -581,43 +649,46 @@ void AVRCharacter::OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* 
 			rightControllerInBackCollider = false;
 		}
 	}
-	/*
-	else if (OverlappedComponent == lanternCollider)
-	{
-		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Lantern Collider Overlapped")));
 
-	}
-	else if (OverlappedComponent == sleepingBagCollider)
-	{
-		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Sleeping Collider Overlapped")));
-
-	}
-	*/
 	else if (OverlappedComponent == leftControllerHammerCollider)
 	{
 		if (OtherActor->ActorHasTag("Enemy"))
 		{
-			enemyHit = false;
+			if (!GetWorld()->GetTimerManager().IsTimerActive(enemyHitResetTimerHandle))
+			{
+				GetWorld()->GetTimerManager().SetTimer(enemyHitResetTimerHandle, [this]() { enemyHit = false; }, 1.0f, false);
+			}
 		}
 	}
 	else if (OverlappedComponent == rightControllerHammerCollider)
 	{
 		if (OtherActor->ActorHasTag("Enemy"))
 		{
-			enemyHit = false;
+			if (!GetWorld()->GetTimerManager().IsTimerActive(enemyHitResetTimerHandle))
+			{
+				GetWorld()->GetTimerManager().SetTimer(enemyHitResetTimerHandle, [this]() { enemyHit = false; }, 1.0f, false);
+			}
 		}
 	}
 }
 
-void AVRCharacter::takeDamage(float amount)
+void AVRCharacter::modifyHealth(float amount)
 {
-	currentHealth = currentHealth - amount;
+	currentHealth = currentHealth + amount;
 	vrPlayerUI->getDwarfHealthBar()->updateHearts(currentHealth);
-	vrPlayerUI->getDamageFlashWidget()->PlayFlash();
+	if (amount < 0)
+	{
+		vrPlayerUI->getDamageFlashWidget()->PlayFlash();
+	}
+	if (amount > 0)
+	{
+		vrPlayerUI->getRestoreFlashWidget()->PlayFlash();
 
+	}
 	updateDamage(currentHealth, true);
 
 }
+
 
 void AVRCharacter::updateDamage(float health, bool isPlayer)
 {
@@ -634,3 +705,114 @@ void AVRCharacter::updateDamage(float health, bool isPlayer)
 	manager->AddToOutgoingCommandQueue(command);
 }
 
+void AVRCharacter::addPowerUp(EPowerUpType type)
+{
+	switch (type)
+	{
+	case(EPowerUpType::HEALTH):
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Health Added")));
+		numberOfPotionPU++;
+		break;
+	case(EPowerUpType::ATTACK):
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Attack Added")));
+		numberOfHammerPU++;
+		break;
+	case(EPowerUpType::SPEED):
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Speed Added")));
+		numberOfSpeedPU++;
+		break;
+	case(EPowerUpType::LANTERN):
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Lantern Added")));
+		numberOfLanternPU++;
+		break;
+	}
+
+	manager->currentlyOccupiedSection->interactionConclusion();
+}
+
+void AVRCharacter::activatePowerUp()
+{
+	switch (currentSelectedIndex) 
+	{
+	case(-1): //nothing case
+	{
+		break;
+	}
+	case(0)://speed case
+	{
+		if (numberOfSpeedPU > 0 && speedPowerUp == false) {
+			numberOfSpeedPU--;
+			vrPlayerUI->getPowerUpBar()->addPowerUp(EPowerUpType::SPEED);
+			speedPowerUp = true;
+		}
+		
+			currentSelectedIndex = -1;
+
+		break;
+	}
+	case(1): //health case
+	{
+		if (numberOfPotionPU > 0) {
+			modifyHealth(2.0f);
+			numberOfPotionPU--;
+			vrPlayerUI->getPowerUpBar()->removePowerUp(EPowerUpType::ATTACK);
+		}
+			currentSelectedIndex = -1;
+
+		break;
+	}
+	case(2):  //cancel case
+	{
+		currentSelectedIndex = -1;
+		break;
+	}
+	case(3)://lantern case
+	{
+		if (numberOfLanternPU > 0) {
+			numberOfLanternPU--;
+		}
+		currentSelectedIndex = -1;
+		break;
+	}
+	case(4)://attack case
+	{
+		if (numberOfHammerPU > 0 && hammerPowerUp == false) {
+			numberOfHammerPU--;
+			rightHandHammerMesh->SetMaterial(0, hammerPowerUpMaterial);
+			leftHandHammerMesh->SetMaterial(0, hammerPowerUpMaterial);
+			hammerPowerUp = true;
+			vrPlayerUI->getPowerUpBar()->addPowerUp(EPowerUpType::ATTACK);
+		}
+		currentSelectedIndex = -1;
+		break;
+	}
+	}
+
+}
+
+void AVRCharacter::turnOffHammerPowerUp()
+{
+	rightHandHammerMesh->SetMaterial(0, hammerRegularMaterial);
+	leftHandHammerMesh->SetMaterial(0, hammerRegularMaterial);
+	hammerPowerUp = false;
+	vrPlayerUI->getPowerUpBar()->removePowerUp(EPowerUpType::ATTACK);
+
+}
+
+void AVRCharacter::turnOffSpeedPowerUp()
+{
+	speedPowerUp = false;
+	vrPlayerUI->getPowerUpBar()->removePowerUp(EPowerUpType::SPEED);
+	speedPowerUpCounter = 0;
+}
+
+bool AVRCharacter::speedPowerUpCheck()
+{
+	speedPowerUpCounter = speedPowerUpCounter +1;
+	if (speedPowerUpCounter == 2)
+	{
+		turnOffSpeedPowerUp();
+		return false;
+	}
+	return true;
+}

@@ -68,7 +68,7 @@ void AMapSection::BeginPlay()
         }
     }
 
-    for (int32 i = 0; i < torchArray.Num(); ++i)
+    for (int32 i = 0; i < torchArray.Num(); i++)
     {
         ATorchActor* torch = torchArray[i];
         if (!IsValid(torch))
@@ -107,27 +107,75 @@ void AMapSection::spawnActorAtPoint(AActor* actorToSpawn)
 
 void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    if (OtherActor->IsA(AVRCharacter::StaticClass()) || OtherActor->Tags.Contains("VRRep"))
+    if (OtherActor->IsA(AVRCharacter::StaticClass()))
     {
-        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Character interacted")));
-        if (arvrmanager->getCurrentlyOccupiedSection() != this) {
-          toggleWalls(true);
-          arvrmanager->setCurrentlyOccupiedSection(this);
-          if (!sectionVisited)
-          {
-              sectionVisited = true;
-              if (OtherActor->IsA(AVRCharacter::StaticClass()))
-              {
-                  for (ATorchActor* torch : torchArray)
-                  {
-                      if (IsValid(torch))
-                      {
-                          torch->toggleLight();
-                      }
-                  }
-              }
-          }
+        AVRCharacter* vrCharacter = Cast<AVRCharacter>(OtherActor);
+        if (vrCharacter->getSpeedPowerUp() == false) {
+            if (arvrmanager->getCurrentlyOccupiedSection() != this) {
+                toggleWalls(true);
+                if (!currentEntity)
+                {
+                    TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();
+                    command->commandType = EMessageType::SwitchTurns;
+
+                    command->sequenceCount = arvrmanager->getSequenceCount();
+
+                    command->playerTurn = EPlayerRole::AR;
+
+                    arvrmanager->AddToOutgoingCommandQueue(command);
+                    arvrmanager->switchTurns(EPlayerRole::AR);
+                }
+                if (!fogOn && OtherActor->IsA(AVRCharacter::StaticClass()))
+                {
+                    toggleFog(true);
+                }
+                arvrmanager->setCurrentlyOccupiedSection(this);
+                if (!sectionVisited)
+                {
+                    sectionVisited = true;
+                    if (OtherActor->IsA(AVRCharacter::StaticClass()))
+                    {
+                        for (ATorchActor* torch : torchArray)
+                        {
+                            if (IsValid(torch))
+                            {
+                                torch->toggleLight();
+                            }
+                        }
+                    }
+                }
+            }
         }
+        else
+        {
+            arvrmanager->setCurrentlyOccupiedSection(this);
+        }
+    }
+    if (OtherActor->Tags.Contains("VRRep"))
+    {
+            GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Character interacted")));
+            if (arvrmanager->getCurrentlyOccupiedSection() != this) {
+                toggleWalls(true);
+                if (!fogOn && OtherActor->IsA(AVRCharacter::StaticClass()))
+                {
+                    toggleFog(true);
+                }
+                arvrmanager->setCurrentlyOccupiedSection(this);
+                if (!sectionVisited)
+                {
+                    sectionVisited = true;
+                    if (OtherActor->IsA(AVRCharacter::StaticClass()))
+                    {
+                        for (ATorchActor* torch : torchArray)
+                        {
+                            if (IsValid(torch))
+                            {
+                                torch->toggleLight();
+                            }
+                        }
+                    }
+                }
+            }
     }
 }
 
@@ -155,9 +203,9 @@ void AMapSection::toggleWalls (bool toggle)
     }
 }
 
-void AMapSection::interactionConclusion(AActor* entity)
+void AMapSection::interactionConclusion()
 {
-    arvrmanager->interactionConclusion(entity);
+    arvrmanager->interactionConclusion(currentEntity);
     TSharedPtr<InteractionAtSectionCommand> command = MakeShared<InteractionAtSectionCommand>();
     command->commandType = EMessageType::InteractionAtSection;
 

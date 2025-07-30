@@ -19,5 +19,4 @@ void UVRPlayerUI::NativeConstruct()
         UE_LOG(LogTemp, Error, TEXT("dwarfHealthBar is NULL"));
     }
 
-
 }

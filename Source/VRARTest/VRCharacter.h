@@ -7,6 +7,8 @@
 #include "Components/WidgetInteractionComponent.h"
 class AARVRGameManager;
 class UVRPlayerUI;
+class UPowerUpSelectionMenu;
+class UMotionControllerComponent;
 #include "VRCharacter.generated.h"
 
 UENUM(BlueprintType)
@@ -17,6 +19,18 @@ enum class EObjectInHand : uint8
 	Map UMETA(DisplayName = "Map"),
 	Sleeping UMETA(DisplayName = "Sleeping")
 };
+
+UENUM(BlueprintType)
+enum class EPowerUpType : uint8
+{
+	SPEED UMETA(DisplayName = "Speed"),
+	SPEEDDOWN UMETA(DisplayName = "SpeedDown"),
+	ATTACK UMETA(DisplayName = "Attack"),
+	LANTERN UMETA(DisplayName = "Lantern"),
+	HEALTH UMETA(DisplayName = "Health"),
+	NONE UMETA(DisplayName = "None")
+};
+
 
 UCLASS()
 class VRARTEST_API AVRCharacter : public ACharacter
@@ -71,6 +85,12 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* rightHandHammerMesh;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material")
+	UMaterial* hammerPowerUpMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material")
+	UMaterial* hammerRegularMaterial;
+
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* leftControllerRayMesh;
 
@@ -98,13 +118,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
 	class UBoxComponent* backCollider;
 
-	/*
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
-	class UBoxComponent* lanternCollider;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
-	class UBoxComponent* sleepingBagCollider;
-	*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
 	class UBoxComponent* leftControllerHammerCollider;
 
@@ -114,11 +127,20 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UWidgetComponent* vrUIComponent;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UVRPlayerUI* vrPlayerUI;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Class Decleration")
 	TSubclassOf<UVRPlayerUI> vrPlayerUIClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UWidgetComponent* powerUpMenuComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPowerUpSelectionMenu* powerUpSelectionMenu;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Class Decleration")
+	TSubclassOf<UPowerUpSelectionMenu> powerUpSelectionMenuClass;
 
 	AARVRGameManager* manager;
 
@@ -131,9 +153,27 @@ public:
 
 	float currentHealth;
 
-	void takeDamage(float amount);
+	void modifyHealth(float amount);
 
 	void updateDamage(float health, bool isPlayer);
+
+	void addPowerUp(EPowerUpType type);
+
+	bool getHammerPowerUp()
+	{
+		return hammerPowerUp;
+	}
+
+	bool getSpeedPowerUp()
+	{
+		return speedPowerUp;
+	}
+
+	void turnOffHammerPowerUp();
+
+	void turnOffSpeedPowerUp();
+
+	bool speedPowerUpCheck();
 
 protected:
 	// Called when the game starts or when spawned 
@@ -144,6 +184,15 @@ protected:
 	
 	void RightTriggerPressed();
 	void RightTriggerReleased();
+
+	void MenuOpenButtonPressed();
+
+	void HandleMenuAxisX(float value);
+	void HandleMenuAxisY(float value);
+
+	void getMenuSelectionIndex();
+
+	void activatePowerUp();
 
 	void controllerLineTrace(UMotionControllerComponent* controller);
 
@@ -197,5 +246,26 @@ private:
 	const float PacketInterval = 0.033f;
 
 	bool enemyHit = false;
+	
+	FTimerHandle enemyHitResetTimerHandle;
 
+	int numberOfHammerPU = 2;
+
+	int numberOfSpeedPU = 2;
+
+	int numberOfPotionPU = 1;
+
+	int numberOfLanternPU = 0;
+
+	int currentSelectedIndex = -1;
+
+	bool powerUpMenuOpen = false;
+
+	bool hammerPowerUp = false;
+
+	bool speedPowerUp = false;
+
+	int speedPowerUpCounter = 0;
+
+	FVector2D StickInput;
 };

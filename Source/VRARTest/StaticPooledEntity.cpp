@@ -2,6 +2,7 @@
 
 
 #include "StaticPooledEntity.h"
+#include "MapSection.h"
 
 // Sets default values
 AStaticPooledEntity::AStaticPooledEntity()
@@ -26,5 +27,13 @@ void AStaticPooledEntity::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+}
+
+void AStaticPooledEntity::entityFinished()
+{
+	AMapSection* ownerSection = getPoolInterface()->getOwnerSection();
+	if (ownerSection) {
+		ownerSection->interactionConclusion();
+	}
 }
 

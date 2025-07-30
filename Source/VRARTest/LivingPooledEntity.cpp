@@ -95,7 +95,7 @@ void ALivingPooledEntity::Die()
 {
     AMapSection* ownerSection = getPoolInterface()->getOwnerSection();
     if (ownerSection) {
-        ownerSection->interactionConclusion(this);
+        ownerSection->interactionConclusion();
     }
 }
 
@@ -109,7 +109,7 @@ void ALivingPooledEntity::CreateHealthUI()
 
     float spacing = 20.0f;
 
-    for (int i = 0; i < maxHealth; ++i)
+    for (int i = 0; i < maxHealth; i++)
     {
         float horizontalOffset = (i - (maxHealth - 1) / 2.0f) * spacing;
 
@@ -139,16 +139,23 @@ void ALivingPooledEntity::OnAttackRangeExitOverlap(UPrimitiveComponent* Overlapp
 {
     if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherActor != this)
     {
-        changeState(ELivingEntityState::Chasing, OtherActor);
+        if (!isAttacking) {
+            changeState(ELivingEntityState::Chasing);
+        }
         playerInAttackCollider = false;
     }
 }
 
 void ALivingPooledEntity::OnChaseRangeOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+
     if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherActor != this)
     {
-        changeState(ELivingEntityState::Chasing, OtherActor);
+        playerRef = OtherActor;
+
+        if (!isAttacking) {
+            changeState(ELivingEntityState::Chasing);
+        }
         playerInChaseCollider = true;
 
     }
@@ -158,6 +165,10 @@ void ALivingPooledEntity::OnChaseRangeExitOverlap(UPrimitiveComponent* Overlappe
 {
     if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherActor != this)
     {
+        if (OtherActor == playerRef)
+        {
+            playerRef = nullptr;
+        }
         changeState(ELivingEntityState::Idle);
         playerInChaseCollider = false;
     }

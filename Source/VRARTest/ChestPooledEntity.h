@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "StaticPooledEntity.h"
 #include "Components/BoxComponent.h"
+class APowerUpActor;
 #include "ChestPooledEntity.generated.h"
 
 /**
@@ -23,6 +24,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 	UAnimationAsset* openAnimation;
 
+	void setPowerUpPickedUp()
+	{
+		powerUpPickedUp = true;
+	}
+
+	void resetChest();
+
+	void toggleTransparent(bool toggle) override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -36,10 +46,17 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UBoxComponent* boxCollider;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USceneComponent* powerUpHolder;
+
 	FTimerHandle OpacityTimer;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Dynamic Material")
 	UMaterialInstanceDynamic* dynamicMaterial;
+
+	TArray<APowerUpActor*> powerUpActors;
+
+	APowerUpActor* selectedPowerUp;
 
 private:
 
@@ -51,7 +68,9 @@ private:
 
 	float fadeTimer = 0.0f;
 
-	float maxFadeTime = 1.5f; //MAYBE CHANGE IT MIGHT BE A BIT SLOW
+	float maxFadeTime = 2.5f;
 
+	bool chestOpened = false;
 
+	bool powerUpPickedUp = false;
 };

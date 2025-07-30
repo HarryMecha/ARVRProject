@@ -76,7 +76,7 @@ public:
 		return currentEntity;
 	}
 
-	void interactionConclusion(AActor* entity);
+	void interactionConclusion();
 
 	bool sectionVisited = false;
 
@@ -101,4 +101,5 @@ private:
 
 	bool isSelected;
 
+	bool fogOn = false;
 };

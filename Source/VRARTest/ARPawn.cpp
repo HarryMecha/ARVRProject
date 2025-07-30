@@ -154,6 +154,13 @@ void AARPawn::OnScreenTouch()
 void AARPawn::SpawnMap()
 {
 
+	if (GEngine && selectedPlane)
+	{
+		FString planeName = selectedPlane->GetName();
+		FString planeLocationStr = selectedPlane->GetActorLocation().ToString();
+		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, FString::Printf(TEXT("Spawning map on plane: %s at location: %s"), *planeName, *planeLocationStr));
+	}
+
 	FTransform planeTransform = selectedPlane->GetTransform();	
 	
 	AActor* mapRoot = manager->GetMapRoot();
@@ -329,6 +336,7 @@ void AARPawn::changeSelected(AActor* planeToChange)
 
 void AARPawn::startARSession()
 {
+	
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Starting AR Session"));
 	UARBlueprintLibrary::StartARSession(ARSessionConfig);
 	if (UARBlueprintLibrary::GetARSessionStatus().Status == EARSessionStatus::Running)

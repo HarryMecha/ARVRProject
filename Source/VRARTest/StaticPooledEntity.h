@@ -25,6 +25,14 @@ public:
 		return Cast<IPooledEntityInterface>(poolComponent);
 	}
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material")
+	UMaterial* normalMaterial;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material")
+	UMaterial* transparentMaterial;
+
+	virtual void toggleTransparent(bool toggle) PURE_VIRTUAL(AStaticPooledEntity::toggleTransparent, );
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -32,9 +40,8 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UPooledEntityComponent* poolComponent;
 	
+	void entityFinished();
 
-private:	
-	// Called every frame
-
+	bool isTransparent = false;
 
 };

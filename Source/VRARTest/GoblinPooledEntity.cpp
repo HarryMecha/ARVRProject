@@ -4,6 +4,7 @@
 #include "GoblinPooledEntity.h"
 #include "GoblinAnimInstance.h"
 #include "VRCharacter.h"
+#include "Components/CapsuleComponent.h"
 #include "LivingEntityAIController.h"
 
 AGoblinPooledEntity::AGoblinPooledEntity()
@@ -60,16 +61,18 @@ void AGoblinPooledEntity::OnLeftHandOverlap(UPrimitiveComponent* OverlappedComp,
     
     if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherActor != this)
     {
-        if (!playerBeenAttacked) 
-        {
-            Cast<AVRCharacter>(OtherActor)->takeDamage(1.0f);
-            playerBeenAttacked = true;
+        if (OtherComp->IsA(UCapsuleComponent::StaticClass())) {
+            if (!playerBeenAttacked)
+            {
+                Cast<AVRCharacter>(OtherActor)->modifyHealth(-1.0f);
+                playerBeenAttacked = true;
+            }
         }
     }
     
 }
 
-void AGoblinPooledEntity::changeState(ELivingEntityState newState, AActor* player)
+void AGoblinPooledEntity::changeState(ELivingEntityState newState)
 {
     currentState = newState;
 
@@ -85,9 +88,9 @@ void AGoblinPooledEntity::changeState(ELivingEntityState newState, AActor* playe
 
     case ELivingEntityState::Chasing:
     {
-        if (AIController && player)
+        if (AIController && playerRef)
         {
-            AIController->ChaseTarget(player);
+            AIController->ChaseTarget(playerRef);
         }
         PlayRunAnimation();
     }

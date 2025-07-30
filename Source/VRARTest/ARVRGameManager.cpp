@@ -292,6 +292,7 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 				UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(chestEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
 				if (pooledComponent)
 				{
+					Cast<AChestPooledEntity>(chestEntity)->resetChest();
 					pooledComponent->setOwnerSection(sectionToSpawn);
 					sectionToSpawn->spawnActorAtPoint(chestEntity);
 					sectionToSpawn->setCurrentEntity(chestEntity);
@@ -364,6 +365,13 @@ void AARVRGameManager::interactionConclusion(AActor* concludedEntity)
 	{
 		AObjectPoolActor* goblinPool = *EntityPools.Find(ESpawnableObject::Goblin);
 		goblinPool->returnToPool(concludedEntity);
+		if (LocalRole == EPlayerRole::VR)
+		{
+			if (vrCharacter->getHammerPowerUp() == true)
+			{
+				vrCharacter->turnOffHammerPowerUp();
+			}
+		}
 	}
 	if (concludedEntity->IsA(AChestPooledEntity::StaticClass()))
 	{
@@ -429,8 +437,13 @@ void AARVRGameManager::updateEnemyHealth(float amount)
 	}
 }
 
-void AARVRGameManager::rotateEntityToPlayer(AMapTunnel* tunnel)
+void AARVRGameManager::handleNextSection(AMapTunnel* tunnel, bool speedPowerUp)
 {
+	bool speedPowerUpActive = false;
+	if (speedPowerUp)
+	{
+		speedPowerUpActive = vrCharacter->speedPowerUpCheck();
+	}
 	for (AMapSection* section : mapSections)
 	{
 
@@ -438,6 +451,8 @@ void AARVRGameManager::rotateEntityToPlayer(AMapTunnel* tunnel)
 		{
 
 			if (section != currentlyOccupiedSection) {
+
+				section->toggleFog(true);
 
 				AActor* currentEntity = section->getCurrentEntity();
 
@@ -451,8 +466,20 @@ void AARVRGameManager::rotateEntityToPlayer(AMapTunnel* tunnel)
 					FRotator flatRotation = FRotator(0.f, lookAtRotation.Yaw, 0.f);
 
 					currentEntity->SetActorRotation(flatRotation);
+
+						if (ALivingPooledEntity* livingEntity = Cast<ALivingPooledEntity>(currentEntity))
+						{
+							//livingEntity->toggletr  // Example method
+						}
+						else if (AStaticPooledEntity* staticEntity = Cast<AStaticPooledEntity>(currentEntity))
+						{
+								staticEntity->toggleTransparent(speedPowerUpActive);
+						}
+
 				}
 			}
 		}
 	}
 }
+
+

@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "HealthBarWidget.h"
+#include "PowerUpBarWidget.h"
 #include "DamageFlashWidget.h"
 #include "VRPlayerUI.generated.h"
 
@@ -28,11 +29,27 @@ public:
 	}
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UPowerUpBarWidget* powerUpBar;
+
+	UPowerUpBarWidget* getPowerUpBar()
+	{
+		return powerUpBar;
+	}
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UDamageFlashWidget* damageFlashWidget;
 
 	UDamageFlashWidget* getDamageFlashWidget()
 	{
 		return damageFlashWidget;
+	}
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UDamageFlashWidget* restoreFlashWidget;
+
+	UDamageFlashWidget* getRestoreFlashWidget()
+	{
+		return restoreFlashWidget;
 	}
 
 protected:

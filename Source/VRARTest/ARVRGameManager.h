@@ -139,7 +139,7 @@ public:
 
 	void updateEnemyHealth(float amount);
 
-	void rotateEntityToPlayer(AMapTunnel* tunnel);
+	void handleNextSection(AMapTunnel* tunnel, bool speedPowerUp);
 
 protected:
 	// Called when the game starts or when spawned

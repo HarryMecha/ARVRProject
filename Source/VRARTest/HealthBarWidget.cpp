@@ -9,7 +9,7 @@ void UHealthBarWidget::CreateHealthBar(int32 maxHealth)
     healthBar->ClearChildren();
     heartWidgets.Empty();
 
-    for (int32 i = 0; i < maxHealth; ++i)
+    for (int32 i = 0; i < maxHealth; i++)
     {
         UHeartWidget* newHeart = CreateWidget<UHeartWidget>(this, heartWidgetClass);
         newHeart->getHeartImage()->SetBrushSize(FVector2D(50, 50));
@@ -30,7 +30,7 @@ void UHealthBarWidget::updateHearts(float currentHealth)
         heart->setHeartState(EHeartFillState::EMPTY);
     }
 
-    for (int32 i = 0; i < heartWidgets.Num(); ++i)
+    for (int32 i = 0; i < heartWidgets.Num(); i++)
     {
         if (currentHealthAmount >= 1.0f)
         {

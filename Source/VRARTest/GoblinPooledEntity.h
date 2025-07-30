@@ -23,7 +23,7 @@ public:
 
 	void EndAttack() override;
 
-	void changeState(ELivingEntityState newState, AActor* player = nullptr) override;
+	void changeState(ELivingEntityState newState) override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -31,7 +31,7 @@ protected:
 
 	virtual void PossessedBy(AController* NewController) override;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UBoxComponent* LeftHandCollider;
 
 	UFUNCTION()
@@ -45,10 +45,6 @@ protected:
 
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
-
-	bool isChasing;
-
-	bool isAttacking;
 
 	bool playerBeenAttacked = false;
 

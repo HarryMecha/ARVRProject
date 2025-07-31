@@ -453,6 +453,7 @@ void AARVRGameManager::handleNextSection(AMapTunnel* tunnel, bool speedPowerUp)
 			if (section != currentlyOccupiedSection) {
 
 				section->toggleFog(true);
+				tunnel->turnOnFog(false);
 
 				AActor* currentEntity = section->getCurrentEntity();
 

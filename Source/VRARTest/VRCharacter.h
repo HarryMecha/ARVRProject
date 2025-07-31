@@ -9,6 +9,10 @@ class AARVRGameManager;
 class UVRPlayerUI;
 class UPowerUpSelectionMenu;
 class UMotionControllerComponent;
+class UCameraComponent;
+class USceneComponent;
+class UBoxComponent;
+class AMapTunnel;
 #include "VRCharacter.generated.h"
 
 UENUM(BlueprintType)
@@ -53,19 +57,19 @@ public:
 
 	// Components
 	UPROPERTY(VisibleAnywhere)
-	class UCameraComponent* VRCamera;
+	UCameraComponent* VRCamera;
 
 	UPROPERTY(VisibleAnywhere)
-	class USceneComponent* VRRoot;
+	USceneComponent* VRRoot;
 
 	UPROPERTY(VisibleAnywhere)
 	USkeletalMeshComponent* characterMesh;
 
 	UPROPERTY(VisibleAnywhere)
-	class UMotionControllerComponent* leftController;
+	UMotionControllerComponent* leftController;
 
 	UPROPERTY(VisibleAnywhere)
-	class UMotionControllerComponent* rightController;
+	UMotionControllerComponent* rightController;
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* leftHandMesh;
@@ -74,10 +78,10 @@ public:
 	UStaticMeshComponent* rightHandMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
-	class UBoxComponent* leftHandCollider;
+	UBoxComponent* leftHandCollider;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
-	class UBoxComponent* rightHandCollider;
+	UBoxComponent* rightHandCollider;
 
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* leftHandHammerMesh;
@@ -115,14 +119,17 @@ public:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mesh")
 	UStaticMesh* rightControllerHammerMesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
-	class UBoxComponent* backCollider;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Mesh")
+	UStaticMesh* rightControllerLanternMesh;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
-	class UBoxComponent* leftControllerHammerCollider;
+	UBoxComponent* backCollider;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
-	class UBoxComponent* rightControllerHammerCollider;
+	UBoxComponent* leftControllerHammerCollider;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
+	UBoxComponent* rightControllerHammerCollider;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UWidgetComponent* vrUIComponent;
@@ -174,6 +181,8 @@ public:
 	void turnOffSpeedPowerUp();
 
 	bool speedPowerUpCheck();
+
+	void turnOffLanternPowerUp();
 
 protected:
 	// Called when the game starts or when spawned 
@@ -237,7 +246,7 @@ private:
 
 	bool rightControllerInBackCollider = false;
 
-	int controllerRayLength = 500;
+	int controllerRayLength = 750;
 
 	void hasCharacterMoved();
 
@@ -255,7 +264,7 @@ private:
 
 	int numberOfPotionPU = 1;
 
-	int numberOfLanternPU = 0;
+	int numberOfLanternPU = 3;
 
 	int currentSelectedIndex = -1;
 
@@ -265,7 +274,11 @@ private:
 
 	bool speedPowerUp = false;
 
+	bool lanternPowerUp = false;
+
 	int speedPowerUpCounter = 0;
 
 	FVector2D StickInput;
+
+	AMapTunnel* selectedTunnel = nullptr;
 };

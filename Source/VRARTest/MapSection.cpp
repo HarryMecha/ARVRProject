@@ -125,10 +125,6 @@ void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor*
                     arvrmanager->AddToOutgoingCommandQueue(command);
                     arvrmanager->switchTurns(EPlayerRole::AR);
                 }
-                if (!fogOn && OtherActor->IsA(AVRCharacter::StaticClass()))
-                {
-                    toggleFog(true);
-                }
                 arvrmanager->setCurrentlyOccupiedSection(this);
                 if (!sectionVisited)
                 {
@@ -149,6 +145,7 @@ void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor*
         else
         {
             arvrmanager->setCurrentlyOccupiedSection(this);
+            toggleWalls(false); //weird edge-case when using the speedpower up this fixes issue
         }
     }
     if (OtherActor->Tags.Contains("VRRep"))
@@ -156,10 +153,6 @@ void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor*
             GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Character interacted")));
             if (arvrmanager->getCurrentlyOccupiedSection() != this) {
                 toggleWalls(true);
-                if (!fogOn && OtherActor->IsA(AVRCharacter::StaticClass()))
-                {
-                    toggleFog(true);
-                }
                 arvrmanager->setCurrentlyOccupiedSection(this);
                 if (!sectionVisited)
                 {
@@ -200,6 +193,14 @@ void AMapSection::toggleWalls (bool toggle)
         {
             tunnel->resetAllWalls();
         }
+    }
+}
+
+void AMapSection::toggleArrows(bool toggle)
+{
+    for (AMapTunnel* tunnel : connectedTunnels)
+    {
+        tunnel->toggleArrows(toggle);
     }
 }
 

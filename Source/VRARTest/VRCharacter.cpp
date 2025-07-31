@@ -15,6 +15,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
 #include "PowerUpSelectionMenu.h"
+#include "MapTunnel.h"
 
 
 // Sets default values
@@ -147,6 +148,7 @@ void AVRCharacter::BeginPlay()
 
 	leftHandMesh->SetStaticMesh(leftControllerOpenMesh);
 	rightHandMesh->SetStaticMesh(rightControllerOpenMesh);
+	rightHandMesh->GetChildComponent(0)->SetVisibility(false);
 
 	leftHandHammerMesh->SetStaticMesh(leftControllerHammerMesh);
 	leftHandHammerMesh->SetVisibility(false);
@@ -155,14 +157,6 @@ void AVRCharacter::BeginPlay()
 
 	backCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
 	backCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
-
-	/*
-	lanternCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
-	lanternCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
-
-	sleepingBagCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
-	sleepingBagCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
-	*/
 
 	leftControllerHammerCollider->OnComponentBeginOverlap.AddDynamic(this, &AVRCharacter::OverlapBegin);
 	leftControllerHammerCollider->OnComponentEndOverlap.AddDynamic(this, &AVRCharacter::OverlapEnd);
@@ -252,7 +246,7 @@ void AVRCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 void AVRCharacter::MoveForwardBack(float strength)
 {
-	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen)
+	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !lanternPowerUp)
 	{
 		// Get forward direction relative to the camera yaw
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
@@ -264,7 +258,7 @@ void AVRCharacter::MoveForwardBack(float strength)
 
 void AVRCharacter::MoveLeftRight(float strength)
 {
-	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen)
+	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !lanternPowerUp)
 	{
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
 		FVector direction = FRotationMatrix(yawRotation).GetUnitAxis(EAxis::Y);
@@ -331,28 +325,29 @@ void AVRCharacter::getMenuSelectionIndex()
 
 void AVRCharacter::LeftTriggerPressed()
 {
-	
-	leftHandMesh->SetStaticMesh(leftControllerClosedMesh);
-	if (leftWidgetInteraction)
-	{
-		leftWidgetInteraction->PressPointerKey(EKeys::LeftMouseButton);
-		if (rightControllerSelected) {
-			rightControllerSelected = false;
-			rightControllerRayMesh->SetVisibility(false);
-			rightWidgetInteraction->SetActive(false);
+	if (!lanternPowerUp) {
+		leftHandMesh->SetStaticMesh(leftControllerClosedMesh);
+		if (leftWidgetInteraction)
+		{
+			leftWidgetInteraction->PressPointerKey(EKeys::LeftMouseButton);
+			if (rightControllerSelected) {
+				rightControllerSelected = false;
+				rightControllerRayMesh->SetVisibility(false);
+				rightWidgetInteraction->SetActive(false);
 
-		}
+			}
 			leftControllerSelected = true;
 			leftControllerRayMesh->SetVisibility(true);
 			leftWidgetInteraction->SetActive(true);
 
-	}
+		}
 
-	if (leftControllerInBackCollider)
-	{
-		leftHandHammerMesh->SetVisibility(true);
-		leftHandMesh->SetVisibility(false);
-		leftControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		if (leftControllerInBackCollider)
+		{
+			leftHandHammerMesh->SetVisibility(true);
+			leftHandMesh->SetVisibility(false);
+			leftControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		}
 	}
 
 }
@@ -375,25 +370,34 @@ void AVRCharacter::LeftTriggerReleased()
 
 void AVRCharacter::RightTriggerPressed()
 {
-	
-	rightHandMesh->SetStaticMesh(rightControllerClosedMesh);
-	if (rightWidgetInteraction)
-	{
-		rightWidgetInteraction->PressPointerKey(EKeys::LeftMouseButton);
-		if (leftControllerSelected) {
-			leftControllerSelected = false;
-			leftControllerRayMesh->SetVisibility(false);
-			leftWidgetInteraction->SetActive(false);
-		}
+	if (!lanternPowerUp) {
+		rightHandMesh->SetStaticMesh(rightControllerClosedMesh);
+		if (rightWidgetInteraction)
+		{
+			rightWidgetInteraction->PressPointerKey(EKeys::LeftMouseButton);
+			if (leftControllerSelected) {
+				leftControllerSelected = false;
+				leftControllerRayMesh->SetVisibility(false);
+				leftWidgetInteraction->SetActive(false);
+			}
 			rightControllerSelected = true;
 			rightControllerRayMesh->SetVisibility(true);
 			rightWidgetInteraction->SetActive(true);
+		}
+		if (rightControllerInBackCollider)
+		{
+			rightHandHammerMesh->SetVisibility(true);
+			rightHandMesh->SetVisibility(false);
+			rightControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+		}
 	}
-	if (rightControllerInBackCollider)
+	else
 	{
-		rightHandHammerMesh->SetVisibility(true);
-		rightHandMesh->SetVisibility(false);
-		rightControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		if (selectedTunnel != nullptr)
+		{
+			turnOffLanternPowerUp();
+		}
 
 	}
 	
@@ -401,17 +405,19 @@ void AVRCharacter::RightTriggerPressed()
 
 void AVRCharacter::RightTriggerReleased()
 {
-	rightHandMesh->SetStaticMesh(rightControllerOpenMesh);
-	if (rightWidgetInteraction)
-	{
-		rightWidgetInteraction->ReleasePointerKey(EKeys::LeftMouseButton);
-	}
-	if (rightHandHammerMesh->IsVisible())
-	{
-		rightHandHammerMesh->SetVisibility(false);
-		rightHandMesh->SetVisibility(true);
-		rightControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	if (!lanternPowerUp) {
+		rightHandMesh->SetStaticMesh(rightControllerOpenMesh);
+		if (rightWidgetInteraction)
+		{
+			rightWidgetInteraction->ReleasePointerKey(EKeys::LeftMouseButton);
+		}
+		if (rightHandHammerMesh->IsVisible())
+		{
+			rightHandHammerMesh->SetVisibility(false);
+			rightHandMesh->SetVisibility(true);
+			rightControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+		}
 	}
 }
 
@@ -442,8 +448,6 @@ void AVRCharacter::controllerLineTrace(UMotionControllerComponent* controller)
 		currentRayMesh = rightControllerRayMesh;
 	}
 
-	if (!currentRayMesh) return;
-
 	FVector rayStart = controller->GetComponentLocation();
 	FVector rayDirection = controller->GetForwardVector();
 	FVector rayEnd = rayStart + (rayDirection * controllerRayLength);
@@ -453,8 +457,42 @@ void AVRCharacter::controllerLineTrace(UMotionControllerComponent* controller)
 	parameters.AddIgnoredActor(this);
 	bool hasHit = GetWorld()->LineTraceSingleByChannel(hitResult, rayStart, rayEnd, ECollisionChannel::ECC_Visibility, parameters, FCollisionResponseParams());
 
-	FVector actualRayEnd = hasHit ? hitResult.Location : rayEnd;
+	FVector actualRayEnd;
+	if (hasHit == true)
+	{
+		if (lanternPowerUp == true) 
+		{
+			if (hitResult.GetActor()->ActorHasTag("MapTunnel"))
+			{
+				AMapTunnel* tunnel = Cast<AMapTunnel>(hitResult.GetActor());
+				if (tunnel->getTunnelVisited() == false)
+				{
+					selectedTunnel = Cast<AMapTunnel>(hitResult.GetActor());
+					selectedTunnel->toggleArrowVisibility(true);
+				}
+			}
+			else if(selectedTunnel != nullptr)
+			{
+				selectedTunnel->toggleArrowVisibility(false);
+				selectedTunnel = nullptr;
+			}
+		}
+		actualRayEnd = hitResult.Location;
 
+	}
+	else
+	{
+		if (lanternPowerUp == true)
+		{
+			if (selectedTunnel != nullptr)
+			{
+				selectedTunnel->toggleArrowVisibility(false);
+				selectedTunnel = nullptr;
+			}
+		}
+		actualRayEnd = rayEnd;
+	}
+	
 	float actualDistance = FVector::Dist(rayStart, actualRayEnd);
 
 	FVector midPoint = rayStart + ((actualRayEnd - rayStart) * 0.5f);
@@ -770,6 +808,19 @@ void AVRCharacter::activatePowerUp()
 	{
 		if (numberOfLanternPU > 0) {
 			numberOfLanternPU--;
+			lanternPowerUp = true;
+			rightControllerSelected = true;
+			rightControllerRayMesh->SetVisibility(true);
+			rightWidgetInteraction->SetActive(false);
+			if (leftControllerSelected)
+			{
+				leftControllerSelected = false;
+				leftControllerRayMesh->SetVisibility(false);
+				leftWidgetInteraction->SetActive(false);
+			}
+			rightHandMesh->SetStaticMesh(rightControllerLanternMesh);
+			rightHandMesh->GetChildComponent(0)->SetVisibility(true);
+			manager->getCurrentlyOccupiedSection()->toggleArrows(true);
 		}
 		currentSelectedIndex = -1;
 		break;
@@ -804,6 +855,16 @@ void AVRCharacter::turnOffSpeedPowerUp()
 	speedPowerUp = false;
 	vrPlayerUI->getPowerUpBar()->removePowerUp(EPowerUpType::SPEED);
 	speedPowerUpCounter = 0;
+}
+
+void AVRCharacter::turnOffLanternPowerUp()
+{
+	selectedTunnel->turnOnFog(false);
+	rightHandMesh->SetStaticMesh(rightControllerClosedMesh);
+	rightHandMesh->GetChildComponent(0)->SetVisibility(false);
+	manager->getCurrentlyOccupiedSection()->toggleArrows(false);
+	selectedTunnel = nullptr;
+	lanternPowerUp = false;
 }
 
 bool AVRCharacter::speedPowerUpCheck()

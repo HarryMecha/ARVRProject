@@ -80,6 +80,8 @@ public:
 
 	bool sectionVisited = false;
 
+	void toggleArrows(bool toggle);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

@@ -40,6 +40,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
 	class UBoxComponent* tunnelWallBackCollider;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
+	class UStaticMeshComponent* tunnelFrontArrow;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
+	class UBoxComponent* tunnelFrontArrowCollider;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mesh")
+	class UStaticMeshComponent* tunnelBackArrow;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
+	class UBoxComponent* tunnelBackArrowCollider;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material")
+	UMaterial* normalArrowMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material")
+	UMaterial* transparentArrowMaterial;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Fog")
 	class UParticleSystemComponent* fogSystemFront;
 
@@ -57,11 +75,20 @@ public:
 
 	void turnOnFog(bool toggle);
 
+	void toggleArrows(bool toggle);
+
+	void toggleArrowVisibility(bool toggle);
+
 	AARVRGameManager* manager;
 
 	void setManager(AARVRGameManager* gameManager)
 	{
 		manager = gameManager;
+	}
+
+	bool getTunnelVisited()
+	{
+		return tunnelVisited;
 	}
 
 protected:

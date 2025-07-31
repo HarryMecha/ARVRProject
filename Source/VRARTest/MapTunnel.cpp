@@ -29,12 +29,21 @@ AMapTunnel::AMapTunnel()
 	tunnelWallBackCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("tunnelWallBackCollider"));
 	tunnelWallBackCollider->SetupAttachment(RootComponent);
 
+	tunnelFrontArrowCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("tunnelFrontArrowCollider"));
+	tunnelFrontArrowCollider->SetupAttachment(RootComponent);
+	tunnelFrontArrow = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("tunnelFrontArrow"));
+	tunnelFrontArrow->SetupAttachment(tunnelFrontArrowCollider);
+	
+	tunnelBackArrowCollider = CreateDefaultSubobject<UBoxComponent>(TEXT("tunnelBackArrowCollider"));
+	tunnelBackArrowCollider->SetupAttachment(RootComponent);
+	tunnelBackArrow = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("tunnelBackArrow"));
+	tunnelBackArrow->SetupAttachment(tunnelBackArrowCollider);
+	
 	fogSystemFront = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("fogSystemFront"));
 	fogSystemFront->SetupAttachment(RootComponent);
 
 	fogSystemBack = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("fogSystemBack"));
 	fogSystemBack->SetupAttachment(RootComponent);
-
 
 	boxColliderInner = CreateDefaultSubobject<UBoxComponent>(TEXT("boxColliderInner"));
 	boxColliderInner->SetupAttachment(RootComponent);
@@ -49,7 +58,13 @@ void AMapTunnel::BeginPlay()
 	boxColliderInner->OnComponentEndOverlap.AddDynamic(this, &AMapTunnel::OverlapEnd);
 	tunnelWallFrontCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	tunnelWallBackCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	turnOnFog(false);
+	tunnelFrontArrow->SetMaterial(0, transparentArrowMaterial);
+	tunnelFrontArrow->SetVisibility(false);
+	tunnelBackArrow->SetMaterial(0, transparentArrowMaterial);
+	tunnelBackArrow->SetVisibility(false);
+	tunnelFrontArrowCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	tunnelBackArrowCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//turnOnFog(false);
 }
 
 // Called every frame
@@ -130,25 +145,23 @@ void AMapTunnel::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* 
 		 if (OverlappedComponent == boxColliderInner) {
 			if (distanceFromFront < distanceFromBack)
 			{
-				fogSystemFront->SetActive(false);
-				fogSystemBack->SetActive(false);
+				turnOnFog(false);
 				tunnelWallFrontCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 				frontWallState = EWallState::MovingUp;
 				manager->setLastTunnelVisited(this);
-				if (OtherActor->IsA(AVRCharacter::StaticClass())) {
+				if (OtherActor->IsA(AVRCharacter::StaticClass())&& OtherComp->IsA(UCapsuleComponent::StaticClass())) {
 					AVRCharacter* vrCharacter = Cast<AVRCharacter>(OtherActor);
 					manager->handleNextSection(this, vrCharacter->speedPowerUpCheck());
 				}
 			}
 			else
 			{
-				fogSystemFront->SetActive(false);
-				fogSystemBack->SetActive(false);
+				turnOnFog(false);
 				tunnelWallBackCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 				backWallState = EWallState::MovingUp;
 				manager->setLastTunnelVisited(this);
-				if (OtherActor->IsA(AVRCharacter::StaticClass())) {
-				AVRCharacter* vrCharacter = Cast<AVRCharacter>(OtherActor);
+				if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherComp->IsA(UCapsuleComponent::StaticClass())) {
+					AVRCharacter* vrCharacter = Cast<AVRCharacter>(OtherActor);
 				manager->handleNextSection(this, vrCharacter->getSpeedPowerUp());
 				}
 			}
@@ -196,10 +209,41 @@ void AMapTunnel::resetAllWalls()
 
 void AMapTunnel::turnOnFog(bool toggle)
 {
-	if (tunnelVisited == false) {
+	if (!tunnelVisited) {
 		fogSystemFront->SetActive(toggle);
 		fogSystemBack->SetActive(toggle);
 	}
-
 }
 
+void AMapTunnel::toggleArrows(bool toggle)
+{
+	if (tunnelVisited == false) {
+		if (toggle == false)
+		{
+			tunnelFrontArrowCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			tunnelBackArrowCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+		else if (toggle == true)
+		{
+			tunnelFrontArrowCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+			tunnelBackArrowCollider->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+		}
+		tunnelFrontArrow->SetVisibility(toggle);
+		tunnelBackArrow->SetVisibility(toggle);
+	}
+}
+
+void AMapTunnel::toggleArrowVisibility(bool toggle)
+{
+	if (toggle == false)
+	{
+		tunnelFrontArrow->SetMaterial(0, transparentArrowMaterial);
+		tunnelBackArrow->SetMaterial(0, transparentArrowMaterial);
+	}
+	else if (toggle == true)
+	{
+		tunnelFrontArrow->SetMaterial(0, normalArrowMaterial);
+		tunnelBackArrow->SetMaterial(0, normalArrowMaterial);
+	}
+
+}

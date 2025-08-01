@@ -30,6 +30,9 @@ public:
 	UTexture2D* AttackUpImage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Texture")
+	UTexture2D* AttackDownImage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Texture")
 	UTexture2D* SpeedUpImage;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Texture")

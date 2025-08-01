@@ -10,7 +10,7 @@
 AGoblinPooledEntity::AGoblinPooledEntity()
 {
     PrimaryActorTick.bCanEverTick = true;
-    maxHealth = 5;
+    maxHealth = 3;
     resetHealth();
     verticalHeartOffset = 45.0f;
 

@@ -165,5 +165,8 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Class Assignments")
 	TSubclassOf<AActor> ChestPooledEntityClass;
 
+	UPROPERTY(EditAnywhere, Category = "Class Assignments")
+	TSubclassOf<AActor> TrapPooledEntityClass;
+
 	TArray<AMapSection*> mapSections;
 };

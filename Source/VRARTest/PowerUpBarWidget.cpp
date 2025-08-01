@@ -9,6 +9,7 @@ void UPowerUpBarWidget::CreatePowerUpBar()
     textureTypeMap.Empty();
 
     textureTypeMap.Add(EPowerUpType::ATTACK, AttackUpImage);
+    textureTypeMap.Add(EPowerUpType::ATTACKDOWN, AttackDownImage);
     textureTypeMap.Add(EPowerUpType::SPEED, SpeedUpImage);
     textureTypeMap.Add(EPowerUpType::SPEEDDOWN, SpeedDownImage);
     textureTypeMap.Add(EPowerUpType::NONE, clearImage);

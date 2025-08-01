@@ -30,8 +30,10 @@ enum class EPowerUpType : uint8
 	SPEED UMETA(DisplayName = "Speed"),
 	SPEEDDOWN UMETA(DisplayName = "SpeedDown"),
 	ATTACK UMETA(DisplayName = "Attack"),
+	ATTACKDOWN UMETA(DisplayName = "AttackDown"),
 	LANTERN UMETA(DisplayName = "Lantern"),
 	HEALTH UMETA(DisplayName = "Health"),
+	HEALTHDOWN  UMETA(DisplayName = "HealthDown"),
 	NONE UMETA(DisplayName = "None")
 };
 
@@ -91,6 +93,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material")
 	UMaterial* hammerPowerUpMaterial;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material")
+	UMaterial* hammerPowerDownMaterial;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Material")
 	UMaterial* hammerRegularMaterial;
@@ -171,16 +176,32 @@ public:
 		return hammerPowerUp;
 	}
 
+	bool getHammerPowerDown()
+	{
+		return hammerPowerDown;
+	}
+
 	bool getSpeedPowerUp()
 	{
 		return speedPowerUp;
 	}
 
+	bool getSpeedPowerDown()
+	{
+		return speedPowerDown;
+	}
+
 	void turnOffHammerPowerUp();
+
+	void turnOffHammerPowerDown();
 
 	void turnOffSpeedPowerUp();
 
 	bool speedPowerUpCheck();
+
+	void turnOffSpeedPowerDown();
+
+	bool speedPowerDownCheck();
 
 	void turnOffLanternPowerUp();
 
@@ -274,9 +295,15 @@ private:
 
 	bool speedPowerUp = false;
 
+	bool hammerPowerDown = false;
+
+	bool speedPowerDown = false;
+
 	bool lanternPowerUp = false;
 
 	int speedPowerUpCounter = 0;
+
+	int speedPowerDownCounter = 0;
 
 	FVector2D StickInput;
 

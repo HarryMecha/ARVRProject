@@ -11,6 +11,7 @@
 #include "LivingPooledEntity.h"
 #include "GoblinPooledEntity.h"
 #include "ChestPooledEntity.h"
+#include "TrapPooledEntity.h"
 #include "MapTunnel.h"
 #include "HealthBarWidget.h"
 #include "ARMapSetupUI.h"
@@ -247,6 +248,13 @@ void AARVRGameManager::setupPools() {
 		chestPool->initialisePool(ChestPooledEntityClass);
 		EntityPools.Add(ESpawnableObject::Chest, chestPool);
 	}
+
+	AObjectPoolActor* trapPool = GetWorld()->SpawnActor<AObjectPoolActor>();
+	if (trapPool)
+	{
+		trapPool->initialisePool(TrapPooledEntityClass);
+		EntityPools.Add(ESpawnableObject::Trap, trapPool);
+	}
 }
 
 void AARVRGameManager::sortMapSections() 
@@ -300,6 +308,25 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 			}
 			break;
 		}
+		case(ESpawnableObject::Trap): {
+			AObjectPoolActor* trapPool = *EntityPools.Find(objectType);
+			AActor* trapEntity = trapPool->getAvailableEntity();
+			if (trapEntity && mapSections.Contains(sectionToSpawn)) {
+				UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(trapEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+				if (pooledComponent)
+				{
+					Cast<ATrapPooledEntity>(trapEntity)->resetTrap();
+					pooledComponent->setOwnerSection(sectionToSpawn);
+					sectionToSpawn->spawnActorAtPoint(trapEntity);
+					sectionToSpawn->setCurrentEntity(trapEntity);
+					if (LocalRole == EPlayerRole::VR)
+					{
+						Cast<ATrapPooledEntity>(trapEntity)->toggleMeshVisibility(false);
+					}
+				}
+			}
+			break;
+		}
 	}
 	if(LocalRole == EPlayerRole::AR)
 	{
@@ -343,7 +370,26 @@ void AARVRGameManager::switchTurns(EPlayerRole playerTurn)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Section: %s"), *currentlyOccupiedSection->GetName()));
 			currentlyOccupiedSection->toggleWalls(false);
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Turn Changed: VR Player 2")));
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Turn Changed: VR Player")));
+		}
+		if (LocalRole == EPlayerRole::VR) {
+			if (vrCharacter->getSpeedPowerDown() == true)
+			{
+				bool check = vrCharacter->speedPowerDownCheck();
+				if (check == true)
+				{
+					TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();
+					command->commandType = EMessageType::SwitchTurns;
+
+					command->sequenceCount = getSequenceCount();
+
+					command->playerTurn = EPlayerRole::AR;
+
+					AddToOutgoingCommandQueue(command);
+
+					switchTurns(EPlayerRole::AR);
+				}
+			}
 		}
 		break;
 	}
@@ -371,12 +417,22 @@ void AARVRGameManager::interactionConclusion(AActor* concludedEntity)
 			{
 				vrCharacter->turnOffHammerPowerUp();
 			}
+			if (vrCharacter->getHammerPowerDown() == true)
+			{
+				vrCharacter->turnOffHammerPowerDown();
+			}
 		}
 	}
 	if (concludedEntity->IsA(AChestPooledEntity::StaticClass()))
 	{
 		AObjectPoolActor* chestPool = *EntityPools.Find(ESpawnableObject::Chest);
 		chestPool->returnToPool(concludedEntity);
+	}
+
+	if (concludedEntity->IsA(ATrapPooledEntity::StaticClass()))
+	{
+		AObjectPoolActor* trapPool = *EntityPools.Find(ESpawnableObject::Trap);
+		trapPool->returnToPool(concludedEntity);
 	}
 
 	TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();

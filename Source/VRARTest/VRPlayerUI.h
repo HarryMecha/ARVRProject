@@ -52,8 +52,24 @@ public:
 		return restoreFlashWidget;
 	}
 
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UImage* FrozenImage;
+
+	void toggleFrozenImage(bool toggle)
+	{
+		if (toggle == true)
+		{
+			FrozenImage->SetVisibility(ESlateVisibility::Visible);
+		}
+		else
+		{
+			FrozenImage->SetVisibility(ESlateVisibility::Hidden);
+		}
+	}
+
 protected:
 	
+
 
 private:
 	

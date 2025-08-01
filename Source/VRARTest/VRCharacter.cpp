@@ -246,7 +246,7 @@ void AVRCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 void AVRCharacter::MoveForwardBack(float strength)
 {
-	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !lanternPowerUp)
+	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !lanternPowerUp && !speedPowerDown)
 	{
 		// Get forward direction relative to the camera yaw
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
@@ -258,7 +258,7 @@ void AVRCharacter::MoveForwardBack(float strength)
 
 void AVRCharacter::MoveLeftRight(float strength)
 {
-	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !lanternPowerUp)
+	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !lanternPowerUp && !speedPowerDown)
 	{
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
 		FVector direction = FRotationMatrix(yawRotation).GetUnitAxis(EAxis::Y);
@@ -269,7 +269,7 @@ void AVRCharacter::MoveLeftRight(float strength)
 
 void AVRCharacter::TurnLeftRight(float value)
 {
-	if (Controller && FMath::Abs(value) > KINDA_SMALL_NUMBER && !powerUpMenuOpen)
+	if (Controller && FMath::Abs(value) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !speedPowerDown)
 	{
 		float turnRate = 45.0f;
 		float deltaTime = GetWorld()->GetDeltaSeconds();
@@ -633,6 +633,10 @@ void AVRCharacter::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 						if (hammerPowerUp == true) {
 							collidedEnemy->takeDamage(2.0f);
 						}
+						else if (hammerPowerDown == true) {
+							collidedEnemy->takeDamage(0.5f);
+
+						}
 						else
 						{
 							collidedEnemy->takeDamage(1.0f);
@@ -655,6 +659,10 @@ void AVRCharacter::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 					enemyHit = true;
 					if (hammerPowerUp == true) {
 						collidedEnemy->takeDamage(2.0f);
+					}
+					else if (hammerPowerDown == true) {
+						collidedEnemy->takeDamage(0.5f);
+
 					}
 					else
 					{
@@ -763,6 +771,27 @@ void AVRCharacter::addPowerUp(EPowerUpType type)
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, FString::Printf(TEXT("Lantern Added")));
 		numberOfLanternPU++;
 		break;
+	case(EPowerUpType::SPEEDDOWN):
+		vrPlayerUI->getPowerUpBar()->addPowerUp(EPowerUpType::SPEEDDOWN);
+		vrPlayerUI->toggleFrozenImage(true);
+		speedPowerDown = true;
+		break;
+	case(EPowerUpType::ATTACKDOWN):
+		if (hammerPowerUp == true)
+		{
+			turnOffHammerPowerUp();
+		}
+		if (hammerPowerDown == false)
+		{
+			rightHandHammerMesh->SetMaterial(0, hammerPowerDownMaterial);
+			leftHandHammerMesh->SetMaterial(0, hammerPowerDownMaterial);
+			hammerPowerDown = true;
+			vrPlayerUI->getPowerUpBar()->addPowerUp(EPowerUpType::ATTACKDOWN);
+		}
+		break;
+	case(EPowerUpType::HEALTHDOWN):
+		modifyHealth(-1.0f);
+		break;
 	}
 
 	manager->currentlyOccupiedSection->interactionConclusion();
@@ -793,7 +822,6 @@ void AVRCharacter::activatePowerUp()
 		if (numberOfPotionPU > 0) {
 			modifyHealth(2.0f);
 			numberOfPotionPU--;
-			vrPlayerUI->getPowerUpBar()->removePowerUp(EPowerUpType::ATTACK);
 		}
 			currentSelectedIndex = -1;
 
@@ -827,7 +855,12 @@ void AVRCharacter::activatePowerUp()
 	}
 	case(4)://attack case
 	{
-		if (numberOfHammerPU > 0 && hammerPowerUp == false) {
+		if (hammerPowerDown == true)
+		{
+			turnOffHammerPowerDown();
+			numberOfHammerPU--;
+		}
+		else if (numberOfHammerPU > 0 && hammerPowerUp == false) {
 			numberOfHammerPU--;
 			rightHandHammerMesh->SetMaterial(0, hammerPowerUpMaterial);
 			leftHandHammerMesh->SetMaterial(0, hammerPowerUpMaterial);
@@ -850,6 +883,15 @@ void AVRCharacter::turnOffHammerPowerUp()
 
 }
 
+void AVRCharacter::turnOffHammerPowerDown()
+{
+	rightHandHammerMesh->SetMaterial(0, hammerRegularMaterial);
+	leftHandHammerMesh->SetMaterial(0, hammerRegularMaterial);
+	hammerPowerDown = false;
+	vrPlayerUI->getPowerUpBar()->removePowerUp(EPowerUpType::ATTACKDOWN);
+
+}
+
 void AVRCharacter::turnOffSpeedPowerUp()
 {
 	speedPowerUp = false;
@@ -857,9 +899,18 @@ void AVRCharacter::turnOffSpeedPowerUp()
 	speedPowerUpCounter = 0;
 }
 
+void AVRCharacter::turnOffSpeedPowerDown()
+{
+	speedPowerDown = false;
+	vrPlayerUI->getPowerUpBar()->removePowerUp(EPowerUpType::SPEEDDOWN);
+	vrPlayerUI->toggleFrozenImage(false);
+	speedPowerDownCounter = 0;
+}
+
 void AVRCharacter::turnOffLanternPowerUp()
 {
 	selectedTunnel->turnOnFog(false);
+	selectedTunnel->setTunnelVisited(true);
 	rightHandMesh->SetStaticMesh(rightControllerClosedMesh);
 	rightHandMesh->GetChildComponent(0)->SetVisibility(false);
 	manager->getCurrentlyOccupiedSection()->toggleArrows(false);
@@ -873,6 +924,17 @@ bool AVRCharacter::speedPowerUpCheck()
 	if (speedPowerUpCounter == 2)
 	{
 		turnOffSpeedPowerUp();
+		return false;
+	}
+	return true;
+}
+
+bool AVRCharacter::speedPowerDownCheck()
+{
+	speedPowerDownCounter = speedPowerDownCounter + 1;
+	if (speedPowerDownCounter == 2)
+	{
+		turnOffSpeedPowerDown();
 		return false;
 	}
 	return true;

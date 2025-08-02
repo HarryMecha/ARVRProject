@@ -16,6 +16,8 @@ public:
     EMessageType commandType;
 
     uint32 sequenceCount;
+
+    float timeLastSent;
    
     virtual void execute(AARVRGameManager* manager) = 0;
 
@@ -35,11 +37,13 @@ public:
     FVector cameraPosition = FVector::ZeroVector;
     FVector leftHandPosition = FVector::ZeroVector;
     FVector rightHandPosition = FVector::ZeroVector;
+    FVector entityPosition = FVector::ZeroVector;
 
     FRotator characterRotation = FRotator::ZeroRotator;
     FRotator cameraRotation = FRotator::ZeroRotator;
     FRotator leftHandRotation = FRotator::ZeroRotator;
     FRotator rightHandRotation = FRotator::ZeroRotator;
+    FRotator entityRotation = FRotator::ZeroRotator;
 
     bool characterPositionChange = false;
     bool characterRotationChange = false;
@@ -49,6 +53,7 @@ public:
     bool leftHandRotationChange = false;
     bool rightHandPositionChange = false;
     bool rightHandRotationChange = false;
+    bool entityIncluded = false;
 
     virtual void execute(AARVRGameManager* manager) override;
 
@@ -267,6 +272,47 @@ public:
 
         Reader.Serialize(&playerEffected, sizeof(playerEffected));
 
+
+    }
+};
+
+class ReceiptConfirmationCommand : public Command
+{
+public:
+
+    float sequenceOfReceipt;
+
+    virtual void execute(AARVRGameManager* manager) override
+    {
+       
+    }
+
+
+
+    TArray<uint8> serialise(AARVRGameManager* manager) override
+    {
+        TArray<uint8> packet;
+        FMemoryWriter Writer(packet, true);
+
+        uint8 MessageType = static_cast<uint8>(commandType);
+        Writer.Serialize(&MessageType, sizeof(uint8));
+
+        Writer.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Writer.Serialize(&sequenceOfReceipt, sizeof(sequenceOfReceipt));
+
+        return packet;
+    }
+
+    void deserialise(AARVRGameManager* manager, TArray<uint8> packet) override
+    {
+        FMemoryReader Reader(packet, true);
+
+        Reader.Serialize(&commandType, sizeof(uint8));
+
+        Reader.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Reader.Serialize(&sequenceOfReceipt, sizeof(sequenceOfReceipt));
 
     }
 };

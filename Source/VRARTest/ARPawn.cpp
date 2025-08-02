@@ -216,7 +216,7 @@ void AARPawn::ConfirmMapChoice()
 	showPlanes = false;
 	TSharedPtr<arPlayerSelectionCommand> command = MakeShared<arPlayerSelectionCommand>();
 	command->commandType = EMessageType::ARPlayerSelection;
-	command->sequenceCount = manager->getSequenceCount();
+	command->sequenceCount = manager->getNextSequenceCount();
 	manager->arPlayerPlaneSelected = true;
 	manager->clearIncomingQueue();
 	manager->clearOutgoingQueue();

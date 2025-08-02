@@ -118,7 +118,7 @@ void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor*
                     TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();
                     command->commandType = EMessageType::SwitchTurns;
 
-                    command->sequenceCount = arvrmanager->getSequenceCount();
+                    command->sequenceCount = arvrmanager->getNextSequenceCount();
 
                     command->playerTurn = EPlayerRole::AR;
 
@@ -210,7 +210,7 @@ void AMapSection::interactionConclusion()
     TSharedPtr<InteractionAtSectionCommand> command = MakeShared<InteractionAtSectionCommand>();
     command->commandType = EMessageType::InteractionAtSection;
 
-    command->sequenceCount = arvrmanager->getSequenceCount();
+    command->sequenceCount = arvrmanager->getNextSequenceCount();
 
     command->sectionIndex = arvrmanager->getMapSections().Find(this);
 

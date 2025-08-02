@@ -77,6 +77,16 @@ public:
 
 	virtual void changeState(ELivingEntityState newState) PURE_VIRTUAL(ALivingPooledEntity::changeState, );
 
+	FVector getEntityPosition() { return RootComponent->GetRelativeLocation(); };
+
+	FRotator getEntityRotation() { return RootComponent->GetRelativeRotation(); };
+
+	void setEntityPosition(FVector newPosition) { RootComponent->SetRelativeLocation(newPosition); };
+
+	void setEntityRotation(FRotator newRotation) { RootComponent->SetRelativeRotation(newRotation); };
+
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

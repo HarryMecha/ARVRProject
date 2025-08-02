@@ -32,7 +32,8 @@ enum class EMessageType : uint8
 	SpawnAtSection UMETA(DisplayName = "Spawn At Section"),
 	SwitchTurns UMETA(DisplayName = "Switch Turns"),
 	InteractionAtSection UMETA(DisplayName = "Interaction At Section"),
-	UpdateHealth UMETA(DisplayName = "Interaction At Section")
+	UpdateHealth UMETA(DisplayName = "Interaction At Section"),
+	ReceiptConfirmation UMETA(DisplayName = "Receipt Confirmation")
 
 };
 
@@ -90,6 +91,8 @@ public:
 	void AddToOutgoingCommandQueue(TSharedPtr<Command> command);
 
 	uint32 getSequenceCount() const { return messageSequenceCount; };
+
+	uint32 getNextSequenceCount() { return messageSequenceCount++; };
 
 	AActor* GetMapRoot() { return mapRoot; };
 
@@ -153,7 +156,7 @@ private:
 	TQueue<TSharedPtr<Command>> outgoingCommandQueue;
 
 
-	uint32 messageSequenceCount;
+	uint32 messageSequenceCount = 0;
 
 	AActor* mapRoot;
 
@@ -169,4 +172,9 @@ private:
 	TSubclassOf<AActor> TrapPooledEntityClass;
 
 	TArray<AMapSection*> mapSections;
+
+	TArray<TSharedPtr<Command>> waitingForConfirmationList;
+
+	void sendReceiptCommand(uint32 sequence);
+
 };

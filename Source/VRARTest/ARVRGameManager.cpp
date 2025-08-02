@@ -116,6 +116,16 @@ void AARVRGameManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	ManageCommandQueue();
+	float currentTime = GetWorld()->GetTimeSeconds();
+	const float resendDelay = 1.0f;
+	for (TSharedPtr<Command>& command : waitingForConfirmationList)
+	{
+		if (currentTime - command->timeLastSent >= resendDelay)
+		{
+			AddToOutgoingCommandQueue(command);
+			command->timeLastSent = currentTime;
+		}
+	}
 
 }
 
@@ -173,6 +183,8 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 			TSharedPtr<arPlayerSelectionCommand> command = MakeShared<arPlayerSelectionCommand>();
 			command->deserialise(this, receivedPacket);
 			incomingCommandQueue.Enqueue(command);
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Selection Message Received"));
+			sendReceiptCommand(command->sequenceCount);
 			break;
 		}
 		case(EMessageType::SpawnAtSection):
@@ -181,7 +193,7 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 			command->deserialise(this, receivedPacket);
 			incomingCommandQueue.Enqueue(command);
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Spawn Message Received"));
-
+			sendReceiptCommand(command->sequenceCount);
 			break;
 		}
 		case(EMessageType::InteractionAtSection):
@@ -190,7 +202,7 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 			command->deserialise(this, receivedPacket);
 			incomingCommandQueue.Enqueue(command);
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Interaction Message Received"));
-
+			sendReceiptCommand(command->sequenceCount);
 			break;
 		}
 		case(EMessageType::SwitchTurns):
@@ -199,7 +211,7 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 			command->deserialise(this, receivedPacket);
 			incomingCommandQueue.Enqueue(command);
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Switch Turns Message Received"));
-
+			sendReceiptCommand(command->sequenceCount);
 			break;
 		}
 		case(EMessageType::UpdateHealth):
@@ -208,7 +220,22 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 			command->deserialise(this, receivedPacket);
 			incomingCommandQueue.Enqueue(command);
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Update Health Message Received"));
-
+			sendReceiptCommand(command->sequenceCount);
+			break;
+		}
+		case(EMessageType::ReceiptConfirmation):
+		{
+			TSharedPtr<ReceiptConfirmationCommand> command = MakeShared<ReceiptConfirmationCommand>();
+			command->deserialise(this, receivedPacket);
+			for (int32 i = 0; i < waitingForConfirmationList.Num(); ++i)
+			{
+				if (waitingForConfirmationList[i]->sequenceCount == command->sequenceOfReceipt)
+				{
+					waitingForConfirmationList.RemoveAt(i);
+					GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, TEXT("Reciept Message Received"));
+					break;
+				}
+			}
 			break;
 		}
 	}
@@ -217,10 +244,56 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 //Sending Messages
 void AARVRGameManager::AddToOutgoingCommandQueue(TSharedPtr<Command> command)
 {
-	if(arPlayerPlaneSelected)
-	outgoingCommandQueue.Enqueue(command);
-}
+	if (!arPlayerPlaneSelected) 
+	{
+		return;
+	}
+	if (command->commandType == EMessageType::PlayerMovement)
+	{
+		TSharedPtr<PlayerMovementCommand> moveCommand = StaticCastSharedPtr<PlayerMovementCommand>(command);
+		if (currentlyOccupiedSection->getCurrentEntity()) {
+			AActor* currentEntity = currentlyOccupiedSection->getCurrentEntity();
+			if (currentEntity->IsA(ALivingPooledEntity::StaticClass()))
+			{
+				ALivingPooledEntity* livingEntity = Cast<ALivingPooledEntity>(currentEntity);
+				moveCommand->entityIncluded = true;
+				moveCommand->entityPosition = livingEntity->getEntityPosition();
+				moveCommand->entityRotation = livingEntity->getEntityRotation();
 
+			}
+			else
+			{
+				moveCommand->entityIncluded = false;
+			}
+		}
+		else 
+		{
+			moveCommand->entityIncluded = false;
+		}
+		moveCommand->timeLastSent = GetWorld()->GetTimeSeconds();
+		outgoingCommandQueue.Enqueue(moveCommand);
+	
+	}
+	else
+	{ 
+		command->timeLastSent = GetWorld()->GetTimeSeconds();
+		outgoingCommandQueue.Enqueue(command);
+	}
+
+	switch (command->commandType)
+	{
+	case(EMessageType::ARPlayerSelection):
+	case(EMessageType::SpawnAtSection):
+	case(EMessageType::InteractionAtSection):
+	case(EMessageType::SwitchTurns):
+	case(EMessageType::UpdateHealth):
+	{
+		waitingForConfirmationList.Add(command);
+		break;
+	}
+	}
+}
+	
 void AARVRGameManager::clearOutgoingQueue() {
 
 	outgoingCommandQueue.Empty();
@@ -334,7 +407,7 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 
 		command->commandType = EMessageType::SpawnAtSection;
 
-		command->sequenceCount = getSequenceCount();
+		command->sequenceCount = getNextSequenceCount();
 
 		command->sectionIndex = mapSections.Find(sectionToSpawn);
 
@@ -345,7 +418,7 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 		TSharedPtr<SwitchTurnsCommand> command2 = MakeShared<SwitchTurnsCommand>();
 		command2->commandType = EMessageType::SwitchTurns;
 
-		command2->sequenceCount = getSequenceCount();
+		command2->sequenceCount = getNextSequenceCount();
 
 		command2->playerTurn = EPlayerRole::VR;
 
@@ -381,7 +454,7 @@ void AARVRGameManager::switchTurns(EPlayerRole playerTurn)
 					TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();
 					command->commandType = EMessageType::SwitchTurns;
 
-					command->sequenceCount = getSequenceCount();
+					command->sequenceCount = getNextSequenceCount();
 
 					command->playerTurn = EPlayerRole::AR;
 
@@ -438,7 +511,7 @@ void AARVRGameManager::interactionConclusion(AActor* concludedEntity)
 	TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();
 	command->commandType = EMessageType::SwitchTurns;
 
-	command->sequenceCount = getSequenceCount();
+	command->sequenceCount = getNextSequenceCount();
 
 	command->playerTurn = EPlayerRole::AR;
 
@@ -537,6 +610,18 @@ void AARVRGameManager::handleNextSection(AMapTunnel* tunnel, bool speedPowerUp)
 			}
 		}
 	}
+}
+
+void AARVRGameManager::sendReceiptCommand(uint32 sequence)
+{
+	TSharedPtr<ReceiptConfirmationCommand> command = MakeShared<ReceiptConfirmationCommand>();
+	command->commandType = EMessageType::ReceiptConfirmation;
+
+	command->sequenceCount = getNextSequenceCount();
+
+	command->sequenceOfReceipt = sequence;
+
+	AddToOutgoingCommandQueue(command);
 }
 
 

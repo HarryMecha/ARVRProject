@@ -39,7 +39,7 @@ void AUDPCommunicationsManager::Tick(float DeltaTime)
 			if (hostDevice) {
 				TArray<uint8> packet;
 				packet.Add(static_cast<uint8>(EMessageType::Connection));
-				packet.Add(manager->getSequenceCount());
+				packet.Add(manager->getNextSequenceCount());
 				SendMessage(packet);
 			}
 		}

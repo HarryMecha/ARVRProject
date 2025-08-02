@@ -1,5 +1,6 @@
 #include "Command.h"
 #include "VRRepresentative.h"
+#include "LivingPooledEntity.h"
 
 void PlayerMovementCommand::execute(AARVRGameManager* manager)
 {
@@ -10,7 +11,6 @@ void PlayerMovementCommand::execute(AARVRGameManager* manager)
 	USkeletalMeshComponent* vrBody = vrRepresentative->getVRBody();
 	UAnimationAsset* idleAnimation = vrRepresentative->getIdleAnimation();
 	UAnimationAsset* movingAnimation = vrRepresentative->getMovingAnimation();
-
 
 	if (characterPositionChange)
 	{
@@ -37,16 +37,6 @@ void PlayerMovementCommand::execute(AARVRGameManager* manager)
 		vrRepresentative->SetActorRelativeRotation(adjustedRotation);
 	}
 	
-
-	/*
-	if (cameraPositionChange)
-	{
-		FVector fixedPosition = FVector(cameraPosition.Y, cameraPosition.X, cameraPosition.Z);
-		vrHead->SetRelativeLocation(fixedPosition);
-	
-	}
-	*/
-
 	if (cameraRotationChange)
 	{
 		FRotator fixedRotation = FRotator(cameraRotation.Roll, cameraRotation.Yaw, -cameraRotation.Pitch);
@@ -56,32 +46,52 @@ void PlayerMovementCommand::execute(AARVRGameManager* manager)
 
 	if (leftHandPositionChange)
 	{
-    // Use the same coordinate swap as the commented camera position
 		FVector fixedPosition = FVector(-leftHandPosition.Y, leftHandPosition.X, leftHandPosition.Z);
 		vrLeftHand->SetRelativeLocation(fixedPosition);
 	}
 
 	if (leftHandRotationChange)
 	{
-    // Use the same rotation transformation as the working head rotation (no +180)
     FRotator fixedRotation = FRotator(-leftHandRotation.Roll, leftHandRotation.Yaw, -leftHandRotation.Pitch);
     vrLeftHand->SetRelativeRotation(fixedRotation);
 	}
 
-// Apply Right Controller Transform
-if (rightHandPositionChange)
-{
-    // Same coordinate swap
-    FVector fixedPosition = FVector(-rightHandPosition.Y, rightHandPosition.X, rightHandPosition.Z);
-    vrRightHand->SetRelativeLocation(fixedPosition);
-}
+	if (rightHandPositionChange)
+	{
+		FVector fixedPosition = FVector(-rightHandPosition.Y, rightHandPosition.X, rightHandPosition.Z);
+		vrRightHand->SetRelativeLocation(fixedPosition);
+	}
 
-if (rightHandRotationChange)
-{
-    // Same rotation transformation as head (no +180)
-    FRotator fixedRotation = FRotator(-rightHandRotation.Roll, rightHandRotation.Yaw, -rightHandRotation.Pitch);
-    vrRightHand->SetRelativeRotation(fixedRotation);
-}
+	if (rightHandRotationChange)
+	{
+		FRotator fixedRotation = FRotator(-rightHandRotation.Roll, rightHandRotation.Yaw, -rightHandRotation.Pitch);
+		vrRightHand->SetRelativeRotation(fixedRotation);
+	}
+	if (entityIncluded)
+	{
+		if (manager->getCurrentlyOccupiedSection()->getCurrentEntity()) {
+			AActor* entity = manager->getCurrentlyOccupiedSection()->getCurrentEntity();
+
+			if (entity->IsA(ALivingPooledEntity::StaticClass()))
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, TEXT("It's a LivingEntity"));
+
+				ALivingPooledEntity* livingEntity = Cast<ALivingPooledEntity>(entity);
+				if (livingEntity)
+				{
+					livingEntity->setEntityPosition(entityPosition);
+					livingEntity->setEntityRotation(entityRotation);
+				}
+			}
+
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, TEXT("No Entity at section"));
+
+		}
+	}
+
 }
 
 TArray<uint8> PlayerMovementCommand::serialise(AARVRGameManager* manager)
@@ -102,6 +112,7 @@ TArray<uint8> PlayerMovementCommand::serialise(AARVRGameManager* manager)
 	Writer << leftHandRotationChange;
 	Writer << rightHandPositionChange;
 	Writer << rightHandRotationChange;
+	Writer << entityIncluded;
 
 	if (characterPositionChange) Writer << characterPosition;
 	if (characterRotationChange) Writer << characterRotation;
@@ -111,6 +122,8 @@ TArray<uint8> PlayerMovementCommand::serialise(AARVRGameManager* manager)
 	if (leftHandRotationChange)  Writer << leftHandRotation;
 	if (rightHandPositionChange) Writer << rightHandPosition;
 	if (rightHandRotationChange) Writer << rightHandRotation;
+	if (entityIncluded) Writer << entityPosition;
+	if (entityIncluded) Writer << entityRotation;
 
 	return packet;
 }
@@ -131,6 +144,7 @@ void PlayerMovementCommand::deserialise(AARVRGameManager* manager, TArray<uint8>
 	Reader << leftHandRotationChange;
 	Reader << rightHandPositionChange;
 	Reader << rightHandRotationChange;
+	Reader << entityIncluded;
 
 	// Conditionally read values based on flags
 	if (characterPositionChange) Reader << characterPosition;
@@ -141,5 +155,7 @@ void PlayerMovementCommand::deserialise(AARVRGameManager* manager, TArray<uint8>
 	if (leftHandRotationChange)  Reader << leftHandRotation;
 	if (rightHandPositionChange) Reader << rightHandPosition;
 	if (rightHandRotationChange) Reader << rightHandRotation;
+	if (entityIncluded) Reader << entityPosition;
+	if (entityIncluded) Reader << entityRotation;
 
 }

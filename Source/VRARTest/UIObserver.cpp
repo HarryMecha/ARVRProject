@@ -79,7 +79,7 @@ void UUIObserver::OnNotify_Implementation(EEvent event, float value, bool b)
 		break;
 
 	case EEvent::TRAP_BUTTON:
-		arPawn->setObjectToSpawn(ESpawnableObject::Trap);
+		arPawn->setObjectToSpawn(ESpawnableObject::Goblin);
 		break;
 
 	case EEvent::CONFIRM_BUTTON_MAIN:

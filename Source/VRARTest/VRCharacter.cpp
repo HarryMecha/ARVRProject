@@ -526,7 +526,7 @@ void AVRCharacter::hasCharacterMoved()
 
 	command->commandType = EMessageType::PlayerMovement;
 
-	command->sequenceCount = manager->getSequenceCount();
+	command->sequenceCount = manager->getNextSequenceCount();
 
 	const float PositionTolerance = 0.1f;
 	const float RotationTolerance = 0.1f;
@@ -742,7 +742,7 @@ void AVRCharacter::updateDamage(float health, bool isPlayer)
 	TSharedPtr<UpdateHealthCommand> command = MakeShared<UpdateHealthCommand>();
 	command->commandType = EMessageType::UpdateHealth;
 
-	command->sequenceCount = manager->getSequenceCount();
+	command->sequenceCount = manager->getNextSequenceCount();
 
 	command->amount = health;
 

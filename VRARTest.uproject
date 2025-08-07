@@ -65,26 +65,6 @@
 				"Android",
 				"HoloLens"
 			]
-		},
-		{
-			"Name": "GoogleARCore",
-			"Enabled": true,
-			"SupportedTargetPlatforms": [
-				"Android"
-			]
-		},
-		{
-			"Name": "GoogleARCoreServices",
-			"Enabled": true
-		},
-		{
-			"Name": "OculusVR",
-			"Enabled": false,
-			"SupportedTargetPlatforms": [
-				"Win32",
-				"Win64",
-				"Android"
-			]
 		}
 	]
 }

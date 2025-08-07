@@ -123,21 +123,33 @@ void AARPawn::OnScreenTouch()
 
 							if (hitActor->IsA(AMapSection::StaticClass()) && objectToSpawn != ESpawnableObject::None) {
 								AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
-								if (currentlySelectedMapSection == selectedMapSection) {
-									currentlySelectedMapSection->swapSelectedMaterial();
-								}
-								if (!currentlySelectedMapSection) {
-									selectedMapSection->swapSelectedMaterial();
+								if (selectedMapSection->getSectionUsed() == false && selectedMapSection->getSectionVisited() == false)
+								{
+									if (currentlySelectedMapSection == selectedMapSection) {
+										currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+										currentlySelectedMapSection = nullptr;
+										mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
+									}
+									else
+									{
+								 if (!currentlySelectedMapSection) {
+									selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
 									currentlySelectedMapSection = selectedMapSection;
 								}
-								if(currentlySelectedMapSection != selectedMapSection){
-									currentlySelectedMapSection->swapSelectedMaterial();
-									selectedMapSection->swapSelectedMaterial();
+								else if (currentlySelectedMapSection != selectedMapSection) {
+									currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+									selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
 									currentlySelectedMapSection = selectedMapSection;
 								}
 								if (mapSetupWidget->getConfirmButton()->GetVisibility() == ESlateVisibility::Hidden)
 								{
 									mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
+								}
+									}
+								}
+								else
+								{
+									currentlySelectedMapSection = nullptr;
 								}
 							}
 							else {
@@ -192,7 +204,7 @@ void AARPawn::SpawnMap()
 		mapRoot->GetAttachedActors(mapRootChildren);
 		for (AActor* child : mapRootChildren)
 		{
-			if (child->Tags.Contains("ARMove"))
+			if (child->Tags.Contains("ARMove") && !child->Tags.Contains("VRRep"))
 			{
 				child->SetActorHiddenInGame(false);
 			}
@@ -349,8 +361,11 @@ void AARPawn::startARSession()
 
 void AARPawn::spawnObject()
 {
+	if (mapSetup == false) {
+		isMapSetup();
+	}
 	manager->spawnEntityAtSection(currentlySelectedMapSection, objectToSpawn);
-	currentlySelectedMapSection->swapSelectedMaterial();
+	currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
 	currentlySelectedMapSection = nullptr;
 	objectToSpawn = ESpawnableObject::None;
 	mapSetupWidget->resetObjectType();
@@ -426,4 +441,17 @@ void AARPawn::resetARState()
 		{
 			showPlanes = true;
 		}, 0.5f, false);  // Delay allows AR system to stabilize
+}
+
+void AARPawn::isMapSetup()
+{
+	if (mapSetupWidget->getTreasureCount() == 0 && mapSetupWidget->getTrapCount() == 0)
+	{
+		mapSetup = true;
+		mapSetupWidget->switchViews();
+	}
+	else
+	{
+		mapSetup = false;
+	}
 }

@@ -9,16 +9,17 @@
 UENUM(BlueprintType)
 enum class EEvent : uint8
 {
-	HOST_BUTTON        UMETA(DisplayName = "Host Button"),
-	CLIENT_BUTTON      UMETA(DisplayName = "Client Button"),
-	CONFIRM_BUTTON     UMETA(DisplayName = "Confirm Button"),
-	SLIDER_CHANGE      UMETA(DisplayName = "Slider Change"),
+	HOST_BUTTON UMETA(DisplayName = "Host Button"),
+	CLIENT_BUTTON UMETA(DisplayName = "Client Button"),
+	CONFIRM_BUTTON UMETA(DisplayName = "Confirm Button"),
+	SLIDER_CHANGE UMETA(DisplayName = "Slider Change"),
 	CONFIRM_BUTTON_MAIN UMETA(DisplayName = "Confirm Button Main"),
-	TREASURE_BUTTON    UMETA(DisplayName = "Treasure Button"),
-	TRAP_BUTTON        UMETA(DisplayName = "Trap Button"),
-	LEFT_ROTATION      UMETA(DisplayName = "Left Rotation"),
-	RIGHT_ROTATION     UMETA(DisplayName = "Right Rotation"),
-	RESET_BUTTON       UMETA(DisplayName = "Reset Button"),
+	TREASURE_BUTTON UMETA(DisplayName = "Treasure Button"),
+	TRAP_BUTTON UMETA(DisplayName = "Trap Button"),
+	LEFT_ROTATION UMETA(DisplayName = "Left Rotation"),
+	RIGHT_ROTATION UMETA(DisplayName = "Right Rotation"),
+	RESET_BUTTON UMETA(DisplayName = "Reset Button"),
+	GOBLIN_BUTTON UMETA(DisplayName = "Goblin Button"),
 	EMPTY              UMETA(DisplayName = "Empty")
 };
 

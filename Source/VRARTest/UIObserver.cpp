@@ -66,19 +66,16 @@ void UUIObserver::OnNotify_Implementation(EEvent event, float value, bool b)
 		break;
 
 	case EEvent::TREASURE_BUTTON:
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Green, TEXT("TREASURE_BUTTON case triggered"));
 		if (arPawn) {
 			arPawn->setObjectToSpawn(ESpawnableObject::Chest);
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %d"), StaticCast<uint8>(arPawn->getObjectToSpawn())));
-		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("ARPawn not found")));
-
 		}
 		break;
 
 	case EEvent::TRAP_BUTTON:
+		arPawn->setObjectToSpawn(ESpawnableObject::Trap);
+		break;
+
+	case EEvent::GOBLIN_BUTTON:
 		arPawn->setObjectToSpawn(ESpawnableObject::Goblin);
 		break;
 

@@ -144,6 +144,8 @@ public:
 
 	void handleNextSection(AMapTunnel* tunnel, bool speedPowerUp);
 
+	void displaySectionUsed(bool toggle);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -176,5 +178,11 @@ private:
 	TArray<TSharedPtr<Command>> waitingForConfirmationList;
 
 	void sendReceiptCommand(uint32 sequence);
+
+	UPROPERTY(EditAnywhere, Category = "AR Plane")
+	UMaterialInterface* blockedMapMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "AR Plane")
+	UMaterialInterface* regularMapMaterial;
 
 };

@@ -44,6 +44,14 @@ public:
 	void setObjectToSpawn(ESpawnableObject objectType)
 	{
 		objectToSpawn = objectType;
+		if (objectToSpawn == ESpawnableObject::None)
+		{
+			manager->displaySectionUsed(false);
+		}
+		else
+		{
+			manager->displaySectionUsed(true);
+		}
 	}
 
 	ESpawnableObject getObjectToSpawn()
@@ -77,9 +85,15 @@ public:
 	void resetSelection() 
 	{
 		currentlySelectedMapSection = nullptr;
-		objectToSpawn = ESpawnableObject::None;
+		setObjectToSpawn(ESpawnableObject::None);
 	}
 
+	void isMapSetup();
+
+	bool getMapSetup()
+	{
+		return mapSetup;
+	}
 
 protected:
 	// Called when the game starts or when spawned
@@ -129,6 +143,12 @@ private:
 	UPROPERTY(EditAnywhere, Category = "AR Plane")
 	UMaterialInterface* selectedPlaneMaterial;
 
+	UPROPERTY(EditAnywhere, Category = "AR Plane")
+	UMaterialInterface* selectedMapMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "AR Plane")
+	UMaterialInterface* unselectedMapMaterial;
+
 	void changeSelected(AActor* planeToChange);
 
 	bool planeSelected = false;
@@ -145,4 +165,5 @@ private:
 
 	bool mapRightRotate = false;
 
+	bool mapSetup = false;
 };

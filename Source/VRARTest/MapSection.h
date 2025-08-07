@@ -20,7 +20,7 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	void swapSelectedMaterial();
+	void swapSelectedMaterial(UMaterialInterface* materialToSwap);
 
 	void spawnActorAtPoint(AActor* actorToSpawn);
 
@@ -78,9 +78,22 @@ public:
 
 	void interactionConclusion();
 
-	bool sectionVisited = false;
-
 	void toggleArrows(bool toggle);
+
+	bool getSectionUsed()
+	{
+		return sectionUsed;
+	}
+
+	void setSectionUsed(bool toggle)
+	{
+		sectionUsed = toggle;
+	}
+
+	bool getSectionVisited()
+	{
+		return sectionVisited;
+	}
 
 protected:
 	// Called when the game starts or when spawned
@@ -103,5 +116,10 @@ private:
 
 	bool isSelected;
 
+	bool sectionUsed;
+
 	bool fogOn = false;
+
+	bool sectionVisited = false;
+
 };

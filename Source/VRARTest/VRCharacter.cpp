@@ -910,10 +910,10 @@ void AVRCharacter::turnOffSpeedPowerDown()
 void AVRCharacter::turnOffLanternPowerUp()
 {
 	selectedTunnel->turnOnFog(false);
-	selectedTunnel->setTunnelVisited(true);
 	rightHandMesh->SetStaticMesh(rightControllerClosedMesh);
 	rightHandMesh->GetChildComponent(0)->SetVisibility(false);
 	manager->getCurrentlyOccupiedSection()->toggleArrows(false);
+	selectedTunnel->setTunnelVisited(true);
 	selectedTunnel = nullptr;
 	lanternPowerUp = false;
 }

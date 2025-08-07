@@ -140,6 +140,13 @@ void AMapTunnel::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* 
 {
 	if (OtherActor->IsA(AVRCharacter::StaticClass()) || OtherActor->Tags.Contains("VRRep"))
 	{
+		if (OtherActor->Tags.Contains("VRRep"))
+		{
+			if (OtherActor->IsHidden())
+			{
+				OtherActor->SetActorHiddenInGame(false);
+			}
+		}
 		float distanceFromFront = FVector::Dist(OtherActor->GetActorLocation(), fogSystemFront->GetComponentLocation());
 		float distanceFromBack = FVector::Dist(OtherActor->GetActorLocation(), fogSystemBack->GetComponentLocation());
 		 if (OverlappedComponent == boxColliderInner) {

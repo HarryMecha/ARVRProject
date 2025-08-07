@@ -87,15 +87,16 @@ void AMapSection::Tick(float DeltaTime)
 
 }
 
-void AMapSection::swapSelectedMaterial() 
+void AMapSection::swapSelectedMaterial(UMaterialInterface* materialToSwap)
 {
-	if (mapMesh->GetMaterial(0) == regularMapMaterial) {
+	if (materialToSwap == selectedMapMaterial) {
 		isSelected = true;
-		mapMesh->SetMaterial(0, selectedMapMaterial);
+		mapMesh->SetMaterial(0, materialToSwap);
 	}
-	else if (mapMesh->GetMaterial(0) == selectedMapMaterial) {
+	else
+    {
 		isSelected = false;
-		mapMesh->SetMaterial(0, regularMapMaterial);
+		mapMesh->SetMaterial(0, materialToSwap);
 	}
 }
 

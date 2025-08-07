@@ -15,20 +15,30 @@ void UARMapSetupUI::NativeConstruct()
 	}
 
 
-	buttonList.Add(TreasureButton, EEvent::TREASURE_BUTTON);
-	buttonList.Add(TrapButton, EEvent::TRAP_BUTTON);
+	buttonList.Add(EEvent::TREASURE_BUTTON, TreasureButtonWidget);
+	buttonList.Add(EEvent::TRAP_BUTTON, TrapButtonWidget);
 
-	buttonStates.Add(TreasureButton, EButtonState::RECEEDED);
-	buttonStates.Add(TrapButton, EButtonState::RECEEDED);
-
-	if (TreasureButton)
+	if (TreasureButtonWidget)
 	{
+		TreasureButton = TreasureButtonWidget->getButton();
+		TreasureButtonWidget->setNumberText(treasureCount);
 		TreasureButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnTreasureButtonClicked);
+
 	}
 
-	if (TrapButton)
+	if (TrapButtonWidget)
 	{
+		TrapButton = TrapButtonWidget->getButton();
+		TrapButtonWidget->setNumberText(trapCount);
 		TrapButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnTrapButtonClicked);
+	}
+
+	if (GoblinButtonWidget)
+	{
+		GoblinButton = GoblinButtonWidget->getButton();
+		GoblinButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnGoblinButtonClicked);
+		GoblinButtonWidget->SetVisibility(ESlateVisibility::Hidden);
+		GoblinButton->SetIsEnabled(false);
 	}
 
 	if (confirmButton)
@@ -54,20 +64,17 @@ void UARMapSetupUI::NativeConstruct()
 
 void UARMapSetupUI::OnButtonClicked(EEvent event)
 {
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("A Button  has been Clicked"));
+
 	switch (event) {
 	case(EEvent::TREASURE_BUTTON):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Treasure Button Clicked"));
 		if (currentlySelectedButtonType == EEvent::EMPTY || currentlySelectedButtonType != EEvent::TREASURE_BUTTON)
 		{
+			lastSelectedButtonType = currentlySelectedButtonType;
 			currentlySelectedButtonType = EEvent::TREASURE_BUTTON;
-			if (buttonClicked)
-			{
-				buttonClicked->notify(event);
-			}
-			else
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Button Clicked is nullptr"));
-			}
+			buttonClicked->notify(event);
+			
 
 		}
 
@@ -76,38 +83,39 @@ void UARMapSetupUI::OnButtonClicked(EEvent event)
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Trap Button Clicked"));
 		if (currentlySelectedButtonType == EEvent::EMPTY || currentlySelectedButtonType != EEvent::TRAP_BUTTON)
 		{
+			lastSelectedButtonType = currentlySelectedButtonType;
 			currentlySelectedButtonType = EEvent::TRAP_BUTTON;
+			buttonClicked->notify(event);
+		}
+		break;
+	
+	case(EEvent::GOBLIN_BUTTON):
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Goblin Button Clicked"));
+		if (currentlySelectedButtonType == EEvent::EMPTY || currentlySelectedButtonType != EEvent::GOBLIN_BUTTON)
+		{
+			lastSelectedButtonType = currentlySelectedButtonType;
+			currentlySelectedButtonType = EEvent::GOBLIN_BUTTON;
 			buttonClicked->notify(event);
 		}
 		break;
 
 	case(EEvent::CONFIRM_BUTTON_MAIN):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Clicked"));
+		if (currentlySelectedButtonType == EEvent::TRAP_BUTTON)
+		{
+			trapCount--;
+			TrapButtonWidget->setNumberText(trapCount);
+		}
+		if (currentlySelectedButtonType == EEvent::TREASURE_BUTTON)
+		{
+			treasureCount--;
+			TreasureButtonWidget->setNumberText(treasureCount);
+		}
 		buttonClicked->notify(event);
 		break;
 	}
-	moveButtons();
+	moveButtons(currentlySelectedButtonType);
 }
-
-
-void UARMapSetupUI::moveButtons()
-{
-	for (const auto& entry : buttonList)
-	{
-		UButton* button = entry.Key;
-		EEvent mappedEvent = entry.Value;
-
-		if (mappedEvent == currentlySelectedButtonType)
-		{
-			buttonStates[button] = EButtonState::EXTENDED;
-		}
-		else
-		{
-			buttonStates[button] = EButtonState::RECEEDED;
-		}
-	}
-}
-
 
 void UARMapSetupUI::changeButtonVisibility(UButton* button)
 {
@@ -148,4 +156,39 @@ void UARMapSetupUI::setupUIObserver(AARPawn* arPawn = nullptr)
 
 	buttonClicked->addObserver(UIObserverInstance);
 
+}
+
+void UARMapSetupUI::moveButtons(EEvent event)
+{
+	if (currentlySelectedButtonType != lastSelectedButtonType)
+	{
+		if (lastSelectedButtonType == EEvent::TREASURE_BUTTON)
+		{
+			PlayAnimation(SlideOutTreasure);
+		}
+		else if (lastSelectedButtonType == EEvent::TRAP_BUTTON)
+		{
+			PlayAnimation(SlideOutTrap);
+		}
+		else if (lastSelectedButtonType == EEvent::GOBLIN_BUTTON)
+		{
+			PlayAnimation(SlideOutGoblin);
+
+		}
+		if (currentlySelectedButtonType == EEvent::TREASURE_BUTTON)
+		{
+			PlayAnimation(SlideInTreasure);
+		}
+		else if (currentlySelectedButtonType == EEvent::TRAP_BUTTON)
+		{
+			PlayAnimation(SlideInTrap);
+		}
+		else if (currentlySelectedButtonType == EEvent::GOBLIN_BUTTON)
+		{
+			PlayAnimation(SlideInGoblin);
+		}
+
+
+		lastSelectedButtonType = currentlySelectedButtonType;
+	}
 }

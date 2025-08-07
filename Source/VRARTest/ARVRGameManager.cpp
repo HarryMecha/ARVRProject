@@ -69,6 +69,7 @@ void AARVRGameManager::BeginPlay()
 				AMapSection* mapSection = Cast<AMapSection>(actor);
 				mapSection->setManager(this);
 				mapSection->toggleFog(false);
+				mapSection->toggleWalls(false);
 				mapSections.Add(mapSection);
 			}
 			if (vrRepresenationClass && actor->IsA(vrRepresenationClass))
@@ -101,6 +102,7 @@ void AARVRGameManager::BeginPlay()
 				AMapSection* mapSection = Cast<AMapSection>(actor);
 				mapSection->setManager(this);
 				mapSection->toggleFog(true);
+				mapSection->toggleWalls(true);
 				mapSections.Add(mapSection);
 			}
 		}
@@ -108,6 +110,9 @@ void AARVRGameManager::BeginPlay()
 	}
 	sortMapSections();
 	currentlyOccupiedSection = mapSections[0];
+	currentlyOccupiedSection->toggleFog(false);
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Starting Section: %s"), *currentlyOccupiedSection->GetName()));
+
 	setupPools();
 }
 
@@ -401,30 +406,33 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 			break;
 		}
 	}
+	sectionToSpawn->setSectionUsed(true);
 	if(LocalRole == EPlayerRole::AR)
 	{
-		TSharedPtr<SpawnAtSectionCommand> command = MakeShared<SpawnAtSectionCommand>();
+			TSharedPtr<SpawnAtSectionCommand> command = MakeShared<SpawnAtSectionCommand>();
 
-		command->commandType = EMessageType::SpawnAtSection;
+			command->commandType = EMessageType::SpawnAtSection;
 
-		command->sequenceCount = getNextSequenceCount();
+			command->sequenceCount = getNextSequenceCount();
 
-		command->sectionIndex = mapSections.Find(sectionToSpawn);
+			command->sectionIndex = mapSections.Find(sectionToSpawn);
 
-		command->objectType = objectType;
+			command->objectType = objectType;
 
-		AddToOutgoingCommandQueue(command);
+			AddToOutgoingCommandQueue(command);
 
-		TSharedPtr<SwitchTurnsCommand> command2 = MakeShared<SwitchTurnsCommand>();
-		command2->commandType = EMessageType::SwitchTurns;
+		if (arPawn->getMapSetup() == true) {
+			TSharedPtr<SwitchTurnsCommand> command2 = MakeShared<SwitchTurnsCommand>();
+			command2->commandType = EMessageType::SwitchTurns;
 
-		command2->sequenceCount = getNextSequenceCount();
+			command2->sequenceCount = getNextSequenceCount();
 
-		command2->playerTurn = EPlayerRole::VR;
+			command2->playerTurn = EPlayerRole::VR;
 
-		AddToOutgoingCommandQueue(command2);
+			AddToOutgoingCommandQueue(command2);
 
-		switchTurns(EPlayerRole::VR);
+			switchTurns(EPlayerRole::VR);
+		}
 	}
 }
 
@@ -624,4 +632,19 @@ void AARVRGameManager::sendReceiptCommand(uint32 sequence)
 	AddToOutgoingCommandQueue(command);
 }
 
-
+void AARVRGameManager::displaySectionUsed(bool toggle)
+{
+	for (AMapSection* section : mapSections)
+	{
+		if (toggle == true) {
+			if (section->getSectionUsed() == true || section->getSectionVisited())
+			{
+				section->swapSelectedMaterial(blockedMapMaterial);
+			}
+		}
+		else
+		{
+			section->swapSelectedMaterial(regularMapMaterial);
+		}
+	}
+}

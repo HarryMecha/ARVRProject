@@ -40,8 +40,7 @@ void ATrapPooledEntity::OnMeshBeginOverlap(UPrimitiveComponent* OverlappedCompon
                 GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, TEXT("TrapActivated"));
                 //apply random effect
                 AVRCharacter* character = Cast<AVRCharacter>(OtherActor);
-                //int randomIndex = FMath::RandRange(0,1);
-                int randomIndex = 2;
+                int randomIndex = FMath::RandRange(0,2);
                 switch (randomIndex) {
                     case(0):
                     {

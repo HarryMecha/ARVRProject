@@ -93,6 +93,7 @@ void ALivingPooledEntity::takeDamage(float amount)
 // Handle death
 void ALivingPooledEntity::Die()
 {
+    DestroyHealthUI();
     AMapSection* ownerSection = getPoolInterface()->getOwnerSection();
     if (ownerSection) {
         ownerSection->interactionConclusion();
@@ -124,6 +125,18 @@ void ALivingPooledEntity::CreateHealthUI()
             heart->setHeartState(EHeartFillState::FULL);
         }
     }
+}
+
+void ALivingPooledEntity::DestroyHealthUI()
+{
+    for (AHeartActor* Heart : heartActors)
+    {
+        if (Heart)
+        {
+            Heart->Destroy();
+        }
+    }
+    heartActors.Empty();
 }
 
 void ALivingPooledEntity::OnAttackRangeOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)

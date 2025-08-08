@@ -276,6 +276,54 @@ public:
     }
 };
 
+class BlockTunnelCommand : public Command
+{
+public:
+
+    uint32 sectionIndex;
+
+    uint32 tunnelIndex;
+
+    virtual void execute(AARVRGameManager* manager) override
+    {
+        AMapSection* mapSection = manager->getMapSections()[sectionIndex];
+        AMapTunnel* mapTunnel = mapSection->getConnectedTunnels()[tunnelIndex];
+        mapTunnel->setTunnelBlocked();
+    }
+
+    TArray<uint8> serialise(AARVRGameManager* manager) override
+    {
+        TArray<uint8> packet;
+        FMemoryWriter Writer(packet, true);
+
+        uint8 MessageType = static_cast<uint8>(commandType);
+        Writer.Serialize(&MessageType, sizeof(uint8));
+
+        Writer.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Writer.Serialize(&sectionIndex, sizeof(sectionIndex));
+
+        Writer.Serialize(&tunnelIndex, sizeof(tunnelIndex));
+
+        return packet;
+    }
+
+    void deserialise(AARVRGameManager* manager, TArray<uint8> packet) override
+    {
+        FMemoryReader Reader(packet, true);
+
+        Reader.Serialize(&commandType, sizeof(uint8));
+
+        Reader.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Reader.Serialize(&sectionIndex, sizeof(sectionIndex));
+
+        Reader.Serialize(&tunnelIndex, sizeof(tunnelIndex));
+
+
+    }
+};
+
 class ReceiptConfirmationCommand : public Command
 {
 public:

@@ -68,22 +68,39 @@ void UUIObserver::OnNotify_Implementation(EEvent event, float value, bool b)
 	case EEvent::TREASURE_BUTTON:
 		if (arPawn) {
 			arPawn->setObjectToSpawn(ESpawnableObject::Chest);
+			arPawn->setBlockEnabled(false);
 		}
 		break;
 
 	case EEvent::TRAP_BUTTON:
 		arPawn->setObjectToSpawn(ESpawnableObject::Trap);
+		arPawn->setBlockEnabled(false);
 		break;
 
 	case EEvent::GOBLIN_BUTTON:
 		arPawn->setObjectToSpawn(ESpawnableObject::Goblin);
+		arPawn->setBlockEnabled(false);
+		break;
+	
+	case EEvent::BLOCK_BUTTON:
+		arPawn->setObjectToSpawn(ESpawnableObject::None);
+		arPawn->setBlockEnabled(true);
 		break;
 
 	case EEvent::CONFIRM_BUTTON_MAIN:
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Notified"));
-		arPawn->spawnObject();
-		arPawn->resetSelection();
-		arPawn->getMapSetupWidget()->changeButtonVisibility(arPawn->getMapSetupWidget()->getConfirmButton());
+		if (arPawn->getBlockEnabled() == false)
+		{
+			arPawn->spawnObject();
+			arPawn->resetSelection();
+			arPawn->getMapSetupWidget()->changeButtonVisibility(arPawn->getMapSetupWidget()->getConfirmButton());
+		}
+		else
+		{
+			arPawn->blockTunnel();
+			arPawn->resetSelection();
+			arPawn->getMapSetupWidget()->changeButtonVisibility(arPawn->getMapSetupWidget()->getConfirmButton());
+		}
 
 		break;
 

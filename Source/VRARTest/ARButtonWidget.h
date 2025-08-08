@@ -49,4 +49,13 @@ public:
 
 		numberText->SetText(text);
 	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int maxCoolDown = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool hasCoolDown = false;
+
+	int currentCoolDownAmount = 0;
+
 };

@@ -47,12 +47,28 @@ public:
 		if (objectToSpawn == ESpawnableObject::None)
 		{
 			manager->displaySectionUsed(false);
+			currentlySelectedMapSection = nullptr;
 		}
 		else
 		{
+			if (blockEnabled == true)
+			{
+				blockEnabled = false;
+				currentlySelectedMapTunnel = nullptr;
+			}
 			manager->displaySectionUsed(true);
 		}
 	}
+	void setBlockEnabled(bool toggle)
+	{
+		blockEnabled = toggle;
+	}
+	
+	bool getBlockEnabled()
+	{
+		return blockEnabled;
+	}
+
 
 	ESpawnableObject getObjectToSpawn()
 	{
@@ -85,6 +101,7 @@ public:
 	void resetSelection() 
 	{
 		currentlySelectedMapSection = nullptr;
+		currentlySelectedMapTunnel = nullptr;
 		setObjectToSpawn(ESpawnableObject::None);
 	}
 
@@ -94,6 +111,8 @@ public:
 	{
 		return mapSetup;
 	}
+
+	void blockTunnel();
 
 protected:
 	// Called when the game starts or when spawned
@@ -118,13 +137,20 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "UI")
 	TSubclassOf<UARMapSetupUI> MapSetupWidgetBlueprintClass;
 
+	UPROPERTY()
 	UUIConnectionWidget* connectionWidget;
 
+	UPROPERTY()
 	UARMapSetupUI* mapSetupWidget;
 
+	UPROPERTY()
 	AARVRGameManager* manager;
 
+	UPROPERTY()
 	AMapSection* currentlySelectedMapSection;
+
+	UPROPERTY()
+	AMapTunnel* currentlySelectedMapTunnel;
 
 private:	
 
@@ -149,6 +175,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "AR Plane")
 	UMaterialInterface* unselectedMapMaterial;
 
+	UPROPERTY(EditAnywhere, Category = "AR Plane")
+	UMaterialInterface* blockedMapMaterial;
+
 	void changeSelected(AActor* planeToChange);
 
 	bool planeSelected = false;
@@ -166,4 +195,6 @@ private:
 	bool mapRightRotate = false;
 
 	bool mapSetup = false;
+
+	bool blockEnabled = false;
 };

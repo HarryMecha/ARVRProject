@@ -201,16 +201,16 @@ void AMapTunnel::raiseAllWalls()
 
 void AMapTunnel::resetAllWalls()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Turn Changed")));
+	if (tunnelBlocked == false) {
+		if (frontWallState == EWallState::Up || frontWallState == EWallState::MovingUp) {
+			frontWallState = EWallState::MovingDown;
+			tunnelWallFrontCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+		if (backWallState == EWallState::Up || backWallState == EWallState::MovingUp) {
+			backWallState = EWallState::MovingDown;
+			tunnelWallBackCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
-	if (frontWallState == EWallState::Up || frontWallState == EWallState::MovingUp) {
-		frontWallState = EWallState::MovingDown;
-		tunnelWallFrontCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
-	if (backWallState == EWallState::Up || backWallState == EWallState::MovingUp) {
-		backWallState = EWallState::MovingDown;
-		tunnelWallBackCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-
+		}
 	}
 }
 
@@ -253,4 +253,21 @@ void AMapTunnel::toggleArrowVisibility(bool toggle)
 		tunnelBackArrow->SetMaterial(0, normalArrowMaterial);
 	}
 
+}
+
+void AMapTunnel::swapSelectedMaterial(UMaterialInterface* materialToSwap)
+{
+	if (materialToSwap == selectedTunnelMaterial) {
+		isSelected = true;
+		tunnelMapMesh->SetMaterial(0, materialToSwap);
+		tunnelWallFrontMesh->SetMaterial(0, materialToSwap);
+		tunnelWallBackMesh->SetMaterial(0, materialToSwap);
+	}
+	else
+	{
+		isSelected = false;
+		tunnelMapMesh->SetMaterial(0, materialToSwap);
+		tunnelWallFrontMesh->SetMaterial(0, materialToSwap);
+		tunnelWallBackMesh->SetMaterial(0, materialToSwap);
+	}
 }

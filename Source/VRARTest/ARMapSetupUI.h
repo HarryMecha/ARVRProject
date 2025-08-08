@@ -58,14 +58,21 @@ public:
 		return trapCount;
 	}
 
-	void switchViews()
+	void switchViews();
+
+	void incrimentCooldownArray()
 	{
-		TreasureButtonWidget->SetVisibility(ESlateVisibility::Hidden);
-		TreasureButton->SetIsEnabled(false);
-		TrapButtonWidget->SetVisibility(ESlateVisibility::Hidden);
-		GoblinButton->SetIsEnabled(false);
-		GoblinButtonWidget->SetVisibility(ESlateVisibility::Visible);
-		GoblinButton->SetIsEnabled(true);
+		for (int32 i = cooldownArray.Num() - 1; i >= 0; --i)
+		{
+			// Get the widget at the current index
+			UARButtonWidget* widget = cooldownArray[i];
+			widget->currentCoolDownAmount--;
+			if (widget->currentCoolDownAmount < 0)
+			{
+				cooldownArray.RemoveAt(i);
+
+			}
+		}
 	}
 
 protected:
@@ -83,6 +90,11 @@ protected:
 	UARButtonWidget* GoblinButtonWidget;
 	
 	UButton* GoblinButton;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UARButtonWidget* BlockButtonWidget;
+
+	UButton* BlockButton;
 	
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UHealthBarWidget* dwarfHealthBar;
@@ -99,8 +111,6 @@ protected:
 
 	UPROPERTY()
 	UUIObserver* UIObserverInstance;
-
-	TMap<EEvent, UARButtonWidget*> buttonList;
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* SlideInTreasure;
@@ -120,6 +130,12 @@ protected:
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* SlideOutGoblin;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* SlideInBlock;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* SlideOutBlock;
 
 private:
 	UFUNCTION()
@@ -146,6 +162,16 @@ private:
 			OnButtonClicked(EEvent::GOBLIN_BUTTON);
 		}
 	}
+
+	UFUNCTION()
+	void OnBlockButtonClicked()
+	{
+		if (IsValid(this))
+		{
+			OnButtonClicked(EEvent::BLOCK_BUTTON);
+		}
+	}
+
 	UFUNCTION()
 	void OnConfirmButtonClicked()
 	{
@@ -163,4 +189,6 @@ private:
 	int treasureCount = 5;
 
 	int trapCount = 5;
+
+	TArray<UARButtonWidget*> cooldownArray;
 };

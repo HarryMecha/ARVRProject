@@ -20,7 +20,8 @@ enum class EEvent : uint8
 	RIGHT_ROTATION UMETA(DisplayName = "Right Rotation"),
 	RESET_BUTTON UMETA(DisplayName = "Reset Button"),
 	GOBLIN_BUTTON UMETA(DisplayName = "Goblin Button"),
-	EMPTY              UMETA(DisplayName = "Empty")
+	BLOCK_BUTTON UMETA(DisplayName = "Block Button"),
+	EMPTY UMETA(DisplayName = "Empty")
 };
 
 UCLASS(Abstract, Blueprintable)

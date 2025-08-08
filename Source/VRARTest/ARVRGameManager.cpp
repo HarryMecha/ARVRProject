@@ -228,6 +228,15 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 			sendReceiptCommand(command->sequenceCount);
 			break;
 		}
+		case(EMessageType::BlockTunnel):
+		{
+			TSharedPtr<BlockTunnelCommand> command = MakeShared<BlockTunnelCommand>();
+			command->deserialise(this, receivedPacket);
+			incomingCommandQueue.Enqueue(command);
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Block Tunnel Message Received"));
+			sendReceiptCommand(command->sequenceCount);
+			break;
+		}
 		case(EMessageType::ReceiptConfirmation):
 		{
 			TSharedPtr<ReceiptConfirmationCommand> command = MakeShared<ReceiptConfirmationCommand>();
@@ -292,6 +301,7 @@ void AARVRGameManager::AddToOutgoingCommandQueue(TSharedPtr<Command> command)
 	case(EMessageType::InteractionAtSection):
 	case(EMessageType::SwitchTurns):
 	case(EMessageType::UpdateHealth):
+	case(EMessageType::BlockTunnel):
 	{
 		waitingForConfirmationList.Add(command);
 		break;
@@ -516,6 +526,8 @@ void AARVRGameManager::interactionConclusion(AActor* concludedEntity)
 		trapPool->returnToPool(concludedEntity);
 	}
 
+	currentlyOccupiedSection->setCurrentEntity(nullptr);
+
 	TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();
 	command->commandType = EMessageType::SwitchTurns;
 
@@ -645,6 +657,47 @@ void AARVRGameManager::displaySectionUsed(bool toggle)
 		else
 		{
 			section->swapSelectedMaterial(regularMapMaterial);
+		}
+	}
+}
+
+void AARVRGameManager::sendBlockedWallCommand(AMapTunnel* tunnelToBlock)
+{
+	if (LocalRole == EPlayerRole::AR)
+	{
+		TSharedPtr<BlockTunnelCommand> command = MakeShared<BlockTunnelCommand>();
+
+		command->commandType = EMessageType::BlockTunnel;
+
+		command->sequenceCount = getNextSequenceCount();
+
+		for (AMapSection* section : mapSections)
+		{
+
+			if (section->getConnectedTunnels().Contains(tunnelToBlock))
+			{
+				command->sectionIndex = mapSections.Find(section);
+
+				command->tunnelIndex = section->getConnectedTunnels().Find(tunnelToBlock);
+
+				break;
+			}
+
+		}
+
+		AddToOutgoingCommandQueue(command);
+
+		if (arPawn->getMapSetup() == true) {
+			TSharedPtr<SwitchTurnsCommand> command2 = MakeShared<SwitchTurnsCommand>();
+			command2->commandType = EMessageType::SwitchTurns;
+
+			command2->sequenceCount = getNextSequenceCount();
+
+			command2->playerTurn = EPlayerRole::VR;
+
+			AddToOutgoingCommandQueue(command2);
+
+			switchTurns(EPlayerRole::VR);
 		}
 	}
 }

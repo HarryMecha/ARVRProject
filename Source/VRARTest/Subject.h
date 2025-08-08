@@ -27,13 +27,15 @@ public:
 		observers.Remove(observe);
 	}
 
-	void notify(EEvent event, float value = 0, bool b = false) const
+	void notify(EEvent event, float value = 0, bool b = false)
 	{
-		for (TWeakObjectPtr<UObserver> obsPtr : observers)
+		TArray<TWeakObjectPtr<UObserver>> observersCopy = observers;
+
+		for (const TWeakObjectPtr<UObserver>& observer: observersCopy)
 		{
-			if (obsPtr.IsValid())
+			if (observer.IsValid())
 			{
-				obsPtr->OnNotify(event, value, b);
+				observer->OnNotify(event, value, b);
 			}
 			else
 			{
@@ -44,6 +46,7 @@ public:
 	}
 
 private:
+	UPROPERTY()
 	TArray<TWeakObjectPtr<UObserver>> observers;
 
 };

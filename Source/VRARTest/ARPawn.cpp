@@ -20,6 +20,7 @@ AARPawn::AARPawn()
 	selectedPlane = nullptr;
 	manager = nullptr;
 	currentlySelectedMapSection = nullptr;
+	currentlySelectedMapTunnel = nullptr;
 	objectToSpawn = ESpawnableObject::None;
 }
 
@@ -96,77 +97,122 @@ void AARPawn::OnScreenTouch()
 	//This will set the position of the screen press to the X and Y variables and set the bool to true.
 	playerController->GetInputTouchState(ETouchIndex::Touch1, touchCoord.X, touchCoord.Y, screenPressed);
 
-		FVector worldLocation, worldDirection;
-		if (playerController->DeprojectScreenPositionToWorld(touchCoord.X, touchCoord.Y, worldLocation, worldDirection))
+	FVector worldLocation, worldDirection;
+	if (playerController->DeprojectScreenPositionToWorld(touchCoord.X, touchCoord.Y, worldLocation, worldDirection))
+	{
+		FVector traceStart = worldLocation;
+		FVector traceEnd = worldLocation + (worldDirection * 100000.0f);
+
+		FHitResult hitResult;
+		FCollisionQueryParams traceParams;
+		traceParams.bReturnPhysicalMaterial = false;
+
+		bool hit = GetWorld()->LineTraceSingleByChannel(hitResult, traceStart, traceEnd, ECC_Visibility, traceParams);
+
+		if (hit)
 		{
-			FVector traceStart = worldLocation;
-			FVector traceEnd = worldLocation + (worldDirection * 100000.0f);
+			AActor* hitActor = hitResult.GetActor();
+			if (!mapSpawned) {
+				changeSelected(hitActor);
+			}
+			else {
+				if (manager->getCurrentTurn() == EPlayerRole::AR)
+				{
+					if (hitActor)
+					{
+						GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %s"), *hitActor->GetName()));
+						GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %d"), StaticCast<uint8>(objectToSpawn)));
 
-			FHitResult hitResult;
-			FCollisionQueryParams traceParams;
-			traceParams.bReturnPhysicalMaterial = false;
-
-			bool hit = GetWorld()->LineTraceSingleByChannel(hitResult, traceStart, traceEnd, ECC_Visibility, traceParams);
-
-			if (hit)
-			{
-				AActor* hitActor = hitResult.GetActor();
-				if (!mapSpawned) {
-					changeSelected(hitActor);
-				}
-				else {
-					if (manager->getCurrentTurn() == EPlayerRole::AR) {
-						if (hitActor)
+						if (hitActor->IsA(AMapSection::StaticClass()) && objectToSpawn != ESpawnableObject::None && blockEnabled == false)
 						{
-							GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %s"), *hitActor->GetName()));
-							GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %d"), StaticCast<uint8>(objectToSpawn)));
-
-							if (hitActor->IsA(AMapSection::StaticClass()) && objectToSpawn != ESpawnableObject::None) {
-								AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
-								if (selectedMapSection->getSectionUsed() == false && selectedMapSection->getSectionVisited() == false)
-								{
-									if (currentlySelectedMapSection == selectedMapSection) {
-										currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
-										currentlySelectedMapSection = nullptr;
-										mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
-									}
-									else
-									{
-								 if (!currentlySelectedMapSection) {
-									selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
-									currentlySelectedMapSection = selectedMapSection;
-								}
-								else if (currentlySelectedMapSection != selectedMapSection) {
+							AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
+							if (currentlySelectedMapTunnel) {
+								currentlySelectedMapTunnel->swapSelectedMaterial(unselectedMapMaterial);
+								currentlySelectedMapTunnel = nullptr;
+								mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
+							}
+							if (selectedMapSection->getSectionUsed() == false && selectedMapSection->getSectionVisited() == false)
+							{
+								if (currentlySelectedMapSection == selectedMapSection) {
 									currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
-									selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
-									currentlySelectedMapSection = selectedMapSection;
-								}
-								if (mapSetupWidget->getConfirmButton()->GetVisibility() == ESlateVisibility::Hidden)
-								{
+									currentlySelectedMapSection = nullptr;
 									mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
-								}
-									}
 								}
 								else
 								{
-									currentlySelectedMapSection = nullptr;
+									if (!currentlySelectedMapSection)
+									{
+										selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
+										currentlySelectedMapSection = selectedMapSection;
+									}
+									else if (currentlySelectedMapSection != selectedMapSection)
+									{
+										currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+										selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
+										currentlySelectedMapSection = selectedMapSection;
+									}
+									if (mapSetupWidget->getConfirmButton()->GetVisibility() == ESlateVisibility::Hidden)
+									{
+										mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
+									}
 								}
 							}
-							else {
+							else
+							{
 								currentlySelectedMapSection = nullptr;
+							}
+						}
+						else if (hitActor->IsA(AMapTunnel::StaticClass()) && blockEnabled == true)
+						{
+							AMapTunnel* selectedMapTunnel = Cast<AMapTunnel>(hitActor);
+							if (currentlySelectedMapSection) {
+								currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+								currentlySelectedMapSection = nullptr;
+								mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
+							}
+							if (selectedMapTunnel->getTunnelBlocked() == false)
+							{
+								if (currentlySelectedMapTunnel == selectedMapTunnel)
+								{
+									currentlySelectedMapTunnel->swapSelectedMaterial(unselectedMapMaterial);
+									currentlySelectedMapTunnel = nullptr;
+									mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
+								}
+								else
+								{
+									if (!currentlySelectedMapTunnel)
+									{
+										selectedMapTunnel->swapSelectedMaterial(selectedMapMaterial);
+										currentlySelectedMapTunnel = selectedMapTunnel;
+									}
+									else if (currentlySelectedMapTunnel != selectedMapTunnel)
+									{
+										currentlySelectedMapTunnel->swapSelectedMaterial(unselectedMapMaterial);
+										selectedMapTunnel->swapSelectedMaterial(selectedMapMaterial);
+										currentlySelectedMapTunnel = selectedMapTunnel;
+									}
+									if (mapSetupWidget->getConfirmButton()->GetVisibility() == ESlateVisibility::Hidden)
+									{
+										mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
+									}
+								}
+							}
+							else
+							{
+								currentlySelectedMapTunnel = nullptr;
 							}
 						}
 					}
 				}
 			}
-
+		}
 	}
 }
 
 void AARPawn::SpawnMap()
 {
 
-	if (GEngine && selectedPlane)
+	if (selectedPlane)
 	{
 		FString planeName = selectedPlane->GetName();
 		FString planeLocationStr = selectedPlane->GetActorLocation().ToString();
@@ -222,7 +268,6 @@ void AARPawn::SpawnMap()
 
 void AARPawn::ConfirmMapChoice() 
 {
-	
 	mapSpawned = true;
 	DestroyOldPlanes();
 	showPlanes = false;
@@ -235,7 +280,6 @@ void AARPawn::ConfirmMapChoice()
 	manager->AddToOutgoingCommandQueue(command);
 	connectionWidget->RemoveFromViewport();
 	mapSetupWidget->AddToViewport();
-	
 }
 
 AActor* AARPawn::CreatePlaneActor(UARPlaneGeometry* planeGeometry)
@@ -277,7 +321,6 @@ void AARPawn::UpdatePlanes()
 	{
 			if (UARPlaneGeometry* planeGeometry = Cast<UARPlaneGeometry>(geometry))
 			{
-				// Only show planes that are being tracked
 				if (planeGeometry->GetTrackingState() == EARTrackingState::Tracking)
 				{
 					if (!activePlanes.Contains(planeGeometry))
@@ -435,12 +478,6 @@ void AARPawn::resetARState()
 		connectionWidget->changeWidgetVisibility(connectionWidget->getRightRotateButton());
 		connectionWidget->changeWidgetVisibility(connectionWidget->getResetButton());
 	}
-
-	FTimerHandle DelayPlanesHandle;
-	GetWorld()->GetTimerManager().SetTimer(DelayPlanesHandle, [this]()
-		{
-			showPlanes = true;
-		}, 0.5f, false);  // Delay allows AR system to stabilize
 }
 
 void AARPawn::isMapSetup()
@@ -453,5 +490,16 @@ void AARPawn::isMapSetup()
 	else
 	{
 		mapSetup = false;
+	}
+}
+
+void AARPawn::blockTunnel()
+{
+	if (currentlySelectedMapTunnel) {
+		currentlySelectedMapTunnel->setTunnelBlocked();
+		manager->sendBlockedWallCommand(currentlySelectedMapTunnel);
+		currentlySelectedMapTunnel->swapSelectedMaterial(blockedMapMaterial);
+		blockEnabled = false;
+		mapSetupWidget->resetObjectType();
 	}
 }

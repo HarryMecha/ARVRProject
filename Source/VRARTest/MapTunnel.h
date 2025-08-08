@@ -91,15 +91,39 @@ public:
 		return tunnelVisited;
 	}
 
-
 	void setTunnelVisited(bool toggle)
 	{
 		tunnelVisited = toggle;
 	}
 
+	bool getTunnelBlocked()
+	{
+		return tunnelBlocked;
+	}
+
+	void setTunnelBlocked()
+	{
+		swapSelectedMaterial(blockedTunnelMaterial);
+		tunnelBlocked = true;
+		raiseAllWalls();
+		turnOnFog(false);
+		tunnelVisited = true;
+	}
+
+	void swapSelectedMaterial(UMaterialInterface* materialToSwap);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, Category = "Material")
+	UMaterialInterface* selectedTunnelMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Material")
+	UMaterialInterface* regularTunnelMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Material")
+	UMaterialInterface* blockedTunnelMaterial;
 
 	UFUNCTION()
 	void OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
@@ -117,6 +141,13 @@ private:
 
 	bool tunnelVisited = false;
 
+	bool isSelected = false;
+
 	float wallUpTargetZ = 0.0f;
 	float wallDownTargetZ = -250.0f;
+
+	bool tunnelLocked = false;
+
+	bool tunnelBlocked = false;
+
 };

@@ -82,7 +82,7 @@ protected:
 	UButton* resetButton;
 
 	
-	//subject for host button clicked
+	UPROPERTY()
 	USubject* connectionButtonClicked = nullptr;
 
 	UPROPERTY()

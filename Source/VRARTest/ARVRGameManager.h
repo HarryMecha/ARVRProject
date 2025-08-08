@@ -25,15 +25,16 @@ enum class EPlayerRole : uint8
 UENUM(BlueprintType)
 enum class EMessageType : uint8
 {
-	Connection UMETA(DisplayName = "Connection"),
-	PlayerMovement UMETA(DisplayName = "Player Movement"),
-	ObjectStateChange UMETA(DisplayName = "Object State Change"),
-	ARPlayerSelection UMETA(DisplayName = "AR Player Selection"),
-	SpawnAtSection UMETA(DisplayName = "Spawn At Section"),
-	SwitchTurns UMETA(DisplayName = "Switch Turns"),
-	InteractionAtSection UMETA(DisplayName = "Interaction At Section"),
-	UpdateHealth UMETA(DisplayName = "Interaction At Section"),
-	ReceiptConfirmation UMETA(DisplayName = "Receipt Confirmation")
+	Connection,
+	PlayerMovement,
+	ObjectStateChange,
+	ARPlayerSelection,
+	SpawnAtSection,
+	SwitchTurns,
+	InteractionAtSection,
+	UpdateHealth,
+	BlockTunnel,
+	ReceiptConfirmation
 
 };
 
@@ -145,6 +146,10 @@ public:
 	void handleNextSection(AMapTunnel* tunnel, bool speedPowerUp);
 
 	void displaySectionUsed(bool toggle);
+
+	void displayTunnelBlocked(bool toggle);
+
+	void sendBlockedWallCommand(AMapTunnel* tunnelToBlock);
 
 protected:
 	// Called when the game starts or when spawned

@@ -71,6 +71,8 @@ public:
 
 	void CreateHealthUI();
 
+	void DestroyHealthUI();
+
 	virtual void StartAttack() PURE_VIRTUAL(ALivingPooledEntity::StartAttack, );
 
 	virtual void EndAttack() PURE_VIRTUAL(ALivingPooledEntity::EndAttack, );

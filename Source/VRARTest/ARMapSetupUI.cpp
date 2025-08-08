@@ -14,10 +14,6 @@ void UARMapSetupUI::NativeConstruct()
 		buttonClicked = NewObject<USubject>(this, USubject::StaticClass());
 	}
 
-
-	buttonList.Add(EEvent::TREASURE_BUTTON, TreasureButtonWidget);
-	buttonList.Add(EEvent::TRAP_BUTTON, TrapButtonWidget);
-
 	if (TreasureButtonWidget)
 	{
 		TreasureButton = TreasureButtonWidget->getButton();
@@ -39,6 +35,14 @@ void UARMapSetupUI::NativeConstruct()
 		GoblinButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnGoblinButtonClicked);
 		GoblinButtonWidget->SetVisibility(ESlateVisibility::Hidden);
 		GoblinButton->SetIsEnabled(false);
+	}
+
+	if (BlockButtonWidget)
+	{
+		BlockButton = BlockButtonWidget->getButton();
+		BlockButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnBlockButtonClicked);
+		BlockButtonWidget->SetVisibility(ESlateVisibility::Hidden);
+		BlockButton->SetIsEnabled(false);
 	}
 
 	if (confirmButton)
@@ -74,8 +78,6 @@ void UARMapSetupUI::OnButtonClicked(EEvent event)
 			lastSelectedButtonType = currentlySelectedButtonType;
 			currentlySelectedButtonType = EEvent::TREASURE_BUTTON;
 			buttonClicked->notify(event);
-			
-
 		}
 
 		break;
@@ -99,6 +101,19 @@ void UARMapSetupUI::OnButtonClicked(EEvent event)
 		}
 		break;
 
+	case(EEvent::BLOCK_BUTTON):
+		if (!cooldownArray.Contains(BlockButtonWidget))
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Block Button Clicked"));
+			if (currentlySelectedButtonType == EEvent::EMPTY || currentlySelectedButtonType != EEvent::BLOCK_BUTTON)
+			{
+				lastSelectedButtonType = currentlySelectedButtonType;
+				currentlySelectedButtonType = EEvent::BLOCK_BUTTON;
+				buttonClicked->notify(event);
+			}
+		}
+		break;
+
 	case(EEvent::CONFIRM_BUTTON_MAIN):
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Clicked"));
 		if (currentlySelectedButtonType == EEvent::TRAP_BUTTON)
@@ -111,10 +126,16 @@ void UARMapSetupUI::OnButtonClicked(EEvent event)
 			treasureCount--;
 			TreasureButtonWidget->setNumberText(treasureCount);
 		}
+		if (currentlySelectedButtonType == EEvent::BLOCK_BUTTON)
+		{
+			BlockButtonWidget->currentCoolDownAmount = BlockButtonWidget->maxCoolDown;
+			cooldownArray.Add(BlockButtonWidget);
+		}
 		buttonClicked->notify(event);
 		break;
 	}
 	moveButtons(currentlySelectedButtonType);
+	incrimentCooldownArray();
 }
 
 void UARMapSetupUI::changeButtonVisibility(UButton* button)
@@ -175,6 +196,11 @@ void UARMapSetupUI::moveButtons(EEvent event)
 			PlayAnimation(SlideOutGoblin);
 
 		}
+		else if (lastSelectedButtonType == EEvent::BLOCK_BUTTON)
+		{
+			PlayAnimation(SlideOutBlock);
+
+		}
 		if (currentlySelectedButtonType == EEvent::TREASURE_BUTTON)
 		{
 			PlayAnimation(SlideInTreasure);
@@ -187,8 +213,24 @@ void UARMapSetupUI::moveButtons(EEvent event)
 		{
 			PlayAnimation(SlideInGoblin);
 		}
+		else if (currentlySelectedButtonType == EEvent::BLOCK_BUTTON)
+		{
+			PlayAnimation(SlideInBlock);
+		}
 
 
 		lastSelectedButtonType = currentlySelectedButtonType;
 	}
+}
+
+void UARMapSetupUI::switchViews()
+{
+	TreasureButtonWidget->SetVisibility(ESlateVisibility::Hidden);
+	TreasureButton->SetIsEnabled(false);
+	TrapButtonWidget->SetVisibility(ESlateVisibility::Hidden);
+	GoblinButton->SetIsEnabled(false);
+	GoblinButtonWidget->SetVisibility(ESlateVisibility::Visible);
+	GoblinButton->SetIsEnabled(true);
+	BlockButtonWidget->SetVisibility(ESlateVisibility::Visible);
+	BlockButton->SetIsEnabled(true);
 }

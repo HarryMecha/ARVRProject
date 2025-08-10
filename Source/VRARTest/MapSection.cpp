@@ -8,6 +8,7 @@
 #include "ARVRGameManager.h"
 #include "Command.h"
 #include "TorchActor.h"
+#include "VRMapWidget.h"
 
 
 
@@ -108,7 +109,7 @@ void AMapSection::spawnActorAtPoint(AActor* actorToSpawn)
 
 void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    if (OtherActor->IsA(AVRCharacter::StaticClass()))
+    if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherComp->IsA(UCapsuleComponent::StaticClass()))
     {
         AVRCharacter* vrCharacter = Cast<AVRCharacter>(OtherActor);
         if (vrCharacter->getSpeedPowerUp() == false) {
@@ -126,12 +127,33 @@ void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor*
                     arvrmanager->AddToOutgoingCommandQueue(command);
                     arvrmanager->switchTurns(EPlayerRole::AR);
                 }
+                int currentindex = arvrmanager->getMapSections().Find(arvrmanager->getCurrentlyOccupiedSection());
+                if (currentindex != 0)
+                {
+                    vrCharacter->vrMapWidget->getMapSectionFromArray(currentindex - 1)->changeCrossVisibility(true);
+
+                }
+                else
+                {
+                    vrCharacter->vrMapWidget->changeMarkerVisibility(false);
+                }
                 arvrmanager->setCurrentlyOccupiedSection(this);
+                currentindex = arvrmanager->getMapSections().Find(arvrmanager->getCurrentlyOccupiedSection());
+                vrCharacter->vrMapWidget->updatePlayerMarker(currentindex - 1);
+                vrCharacter->vrMapWidget->changeMarkerVisibility(true);
                 if (!sectionVisited)
                 {
                     sectionVisited = true;
-                    if (OtherActor->IsA(AVRCharacter::StaticClass()))
+                    int index = arvrmanager->getMapSections().Find(this);
+                    if (index != 0)
                     {
+                        vrCharacter->vrMapWidget->getMapSectionFromArray(index - 1)->changeCrossVisibility(false);
+
+                    }
+                    else
+                    {
+                        vrCharacter->vrMapWidget->changeMarkerVisibility(false);
+                    }
                         for (ATorchActor* torch : torchArray)
                         {
                             if (IsValid(torch))
@@ -139,7 +161,6 @@ void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor*
                                 torch->toggleLight();
                             }
                         }
-                    }
                 }
             }
         }
@@ -149,7 +170,7 @@ void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor*
             toggleWalls(false); //weird edge-case when using the speedpower up this fixes issue
         }
     }
-    if (OtherActor->Tags.Contains("VRRep"))
+    if (OtherActor->Tags.Contains("VRRep") && OtherComp->IsA(UCapsuleComponent::StaticClass()))
     {
             GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Character interacted")));
             if (arvrmanager->getCurrentlyOccupiedSection() != this) {

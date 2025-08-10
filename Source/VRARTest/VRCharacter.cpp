@@ -15,6 +15,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
 #include "PowerUpSelectionMenu.h"
+#include "VRMapWidget.h"
 #include "MapTunnel.h"
 
 
@@ -102,6 +103,12 @@ AVRCharacter::AVRCharacter()
 	powerUpMenuComponent->SetDrawSize(FVector2D(1000, 1000));
 	powerUpMenuComponent->SetWidgetSpace(EWidgetSpace::World);
 	powerUpMenuComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	vrMapComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("VRMapComponent"));
+	vrMapComponent->SetupAttachment(rightHandMesh);
+	vrMapComponent->SetDrawSize(FVector2D(600, 600));
+	vrMapComponent->SetWidgetSpace(EWidgetSpace::World);
+	vrMapComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
 	manager = nullptr;
 }
@@ -137,6 +144,20 @@ void AVRCharacter::BeginPlay()
 		}
 	}
 
+	if (vrMapWidgetClass)
+	{
+		vrMapWidget = CreateWidget<UVRMapWidget>(GetWorld(), vrMapWidgetClass);
+
+		if (vrMapWidget)
+		{ 
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("MapWidget real"));
+
+			vrMapComponent->SetWidget(vrMapWidget);
+			vrMapWidget->SetVisibility(ESlateVisibility::Hidden);
+
+		}
+	}
+
 	prevCharacterPosition = GetRootComponent()->GetComponentLocation();
 	prevCharacterRotation = GetRootComponent()->GetComponentRotation();
 	prevCameraPosition = VRCamera->GetComponentLocation();
@@ -148,7 +169,7 @@ void AVRCharacter::BeginPlay()
 
 	leftHandMesh->SetStaticMesh(leftControllerOpenMesh);
 	rightHandMesh->SetStaticMesh(rightControllerOpenMesh);
-	rightHandMesh->GetChildComponent(0)->SetVisibility(false);
+	rightHandMesh->GetChildComponent(1)->SetVisibility(false);
 
 	leftHandHammerMesh->SetStaticMesh(leftControllerHammerMesh);
 	leftHandHammerMesh->SetVisibility(false);
@@ -214,7 +235,10 @@ void AVRCharacter::Tick(float DeltaTime)
 		TimeSinceLastPacket = 0.0f;
 		hasCharacterMoved();
 	}
-
+	if (mapOpen)
+	{
+		vrMapWidget->updatePlayerMarkerRotation(GetActorRotation());
+	}
 
 	UWorld* currentWorld = GetWorld();
 	playerController = UGameplayStatics::GetPlayerController(currentWorld, 0);
@@ -241,6 +265,9 @@ void AVRCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAction("UIInteractRightTrigger", IE_Released, this, &AVRCharacter::RightTriggerReleased);
 
 	PlayerInputComponent->BindAction("PowerUpMenuOpen", IE_Pressed, this, &AVRCharacter::MenuOpenButtonPressed);
+
+	PlayerInputComponent->BindAction("MapOpen", IE_Pressed, this, &AVRCharacter::MapOpenButtonPressed);
+
 
 }
 
@@ -434,6 +461,20 @@ void AVRCharacter::MenuOpenButtonPressed()
 		powerUpMenuOpen = false;
 		powerUpSelectionMenu->SetVisibility(ESlateVisibility::Hidden);
 		activatePowerUp();
+	}
+}
+
+void AVRCharacter::MapOpenButtonPressed()
+{
+	if (!mapOpen)
+	{
+		mapOpen = true;
+		vrMapWidget->SetVisibility(ESlateVisibility::Visible);
+	}
+	else
+	{
+		mapOpen = false;
+		vrMapWidget->SetVisibility(ESlateVisibility::Hidden);
 	}
 }
 
@@ -847,7 +888,7 @@ void AVRCharacter::activatePowerUp()
 				leftWidgetInteraction->SetActive(false);
 			}
 			rightHandMesh->SetStaticMesh(rightControllerLanternMesh);
-			rightHandMesh->GetChildComponent(0)->SetVisibility(true);
+			rightHandMesh->GetChildComponent(1)->SetVisibility(true);
 			manager->getCurrentlyOccupiedSection()->toggleArrows(true);
 		}
 		currentSelectedIndex = -1;
@@ -911,7 +952,7 @@ void AVRCharacter::turnOffLanternPowerUp()
 {
 	selectedTunnel->turnOnFog(false);
 	rightHandMesh->SetStaticMesh(rightControllerClosedMesh);
-	rightHandMesh->GetChildComponent(0)->SetVisibility(false);
+	rightHandMesh->GetChildComponent(1)->SetVisibility(false);
 	manager->getCurrentlyOccupiedSection()->toggleArrows(false);
 	selectedTunnel->setTunnelVisited(true);
 	selectedTunnel = nullptr;

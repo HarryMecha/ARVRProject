@@ -168,7 +168,10 @@ private:
 	{
 		if (IsValid(this))
 		{
-			OnButtonClicked(EEvent::BLOCK_BUTTON);
+			if (!cooldownArray.Contains(BlockButtonWidget))
+			{
+				OnButtonClicked(EEvent::BLOCK_BUTTON);
+			}
 		}
 	}
 

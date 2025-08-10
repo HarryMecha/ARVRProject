@@ -147,8 +147,6 @@ public:
 
 	void displaySectionUsed(bool toggle);
 
-	void displayTunnelBlocked(bool toggle);
-
 	void sendBlockedWallCommand(AMapTunnel* tunnelToBlock);
 
 protected:

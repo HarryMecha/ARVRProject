@@ -8,6 +8,7 @@
 class AARVRGameManager;
 class UVRPlayerUI;
 class UPowerUpSelectionMenu;
+class UVRMapWidget;
 class UMotionControllerComponent;
 class UCameraComponent;
 class USceneComponent;
@@ -153,6 +154,16 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Class Decleration")
 	TSubclassOf<UPowerUpSelectionMenu> powerUpSelectionMenuClass;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UWidgetComponent* vrMapComponent;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UVRMapWidget* vrMapWidget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Class Decleration")
+	TSubclassOf<UVRMapWidget> vrMapWidgetClass;
+
 
 	AARVRGameManager* manager;
 
@@ -216,6 +227,9 @@ protected:
 	void RightTriggerReleased();
 
 	void MenuOpenButtonPressed();
+
+	void MapOpenButtonPressed();
+
 
 	void HandleMenuAxisX(float value);
 	void HandleMenuAxisY(float value);
@@ -290,6 +304,8 @@ private:
 	int currentSelectedIndex = -1;
 
 	bool powerUpMenuOpen = false;
+
+	bool mapOpen = false;
 
 	bool hammerPowerUp = false;
 

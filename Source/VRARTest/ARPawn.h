@@ -47,10 +47,16 @@ public:
 		if (objectToSpawn == ESpawnableObject::None)
 		{
 			manager->displaySectionUsed(false);
+			manager->displayTunnelUsed(false);
+			manager->displaySectionSwap(false);
 			currentlySelectedMapSection = nullptr;
 			if (blockEnabled == true)
 			{
 				manager->displayTunnelUsed(true);
+			}
+			else if (swapEnabled == true)
+			{
+				manager->displaySectionSwap(true);
 			}
 		}
 		else
@@ -61,9 +67,16 @@ public:
 				currentlySelectedMapTunnel = nullptr;
 				manager->displayTunnelUsed(false);
 			}
+			if (swapEnabled == true)
+			{
+				swapEnabled = false;
+				currentlySelectedMapTunnel = nullptr;
+				manager->displaySectionSwap(false);
+			}
 			manager->displaySectionUsed(true);
 		}
 	}
+
 	void setBlockEnabled(bool toggle)
 	{
 		blockEnabled = toggle;
@@ -73,6 +86,17 @@ public:
 	{
 		return blockEnabled;
 	}
+
+	void setSwapEnabled(bool toggle)
+	{
+		swapEnabled = toggle;
+	}
+
+	bool getSwapEnabled()
+	{
+		return swapEnabled;
+	}
+
 
 
 	ESpawnableObject getObjectToSpawn()
@@ -107,6 +131,8 @@ public:
 	{
 		currentlySelectedMapSection = nullptr;
 		currentlySelectedMapTunnel = nullptr;
+		swapSelectedMapSection1 = nullptr;
+		swapSelectedMapSection2 = nullptr;
 		setObjectToSpawn(ESpawnableObject::None);
 	}
 
@@ -118,6 +144,8 @@ public:
 	}
 
 	void blockTunnel();
+
+	void swapObjects();
 
 protected:
 	// Called when the game starts or when spawned
@@ -156,6 +184,12 @@ protected:
 
 	UPROPERTY()
 	AMapTunnel* currentlySelectedMapTunnel;
+
+	UPROPERTY()
+	AMapSection* swapSelectedMapSection1;
+
+	UPROPERTY()
+	AMapSection* swapSelectedMapSection2;
 
 private:	
 
@@ -202,4 +236,6 @@ private:
 	bool mapSetup = false;
 
 	bool blockEnabled = false;
+
+	bool swapEnabled = false;
 };

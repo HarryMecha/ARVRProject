@@ -34,6 +34,7 @@ enum class EMessageType : uint8
 	InteractionAtSection,
 	UpdateHealth,
 	BlockTunnel,
+	SwapSections,
 	ReceiptConfirmation
 
 };
@@ -91,6 +92,8 @@ public:
 
 	void AddToOutgoingCommandQueue(TSharedPtr<Command> command);
 
+	void ResendCommand(TSharedPtr<Command> command);
+
 	uint32 getSequenceCount() const { return messageSequenceCount; };
 
 	uint32 getNextSequenceCount() { return messageSequenceCount++; };
@@ -135,7 +138,7 @@ public:
 
 	bool vrPlayerTurn = false;
 
-	void interactionConclusion(AActor* concludedEntity);
+	void interactionConclusion(TWeakObjectPtr<AActor> concludedEntityPtr);
 
 	void switchTurns(EPlayerRole playerTurn);
 
@@ -147,9 +150,14 @@ public:
 
 	void displaySectionUsed(bool toggle);
 
+	void displaySectionSwap(bool toggle);
+
 	void displayTunnelUsed(bool toggle);
 
 	void sendBlockedWallCommand(AMapTunnel* tunnelToBlock);
+
+	void sendSwapSectionCommand(AMapSection* swapSelectedMapSection1, AMapSection* swapSelectedMapSection2);
+
 
 protected:
 	// Called when the game starts or when spawned

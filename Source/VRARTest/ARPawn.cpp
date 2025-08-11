@@ -122,8 +122,10 @@ void AARPawn::OnScreenTouch()
 					{
 						GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %s"), *hitActor->GetName()));
 						GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %d"), StaticCast<uint8>(objectToSpawn)));
+						GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Cyan, FString::Printf(TEXT("swapEnabled is: %s"), (swapEnabled ? TEXT("true") : TEXT("false")))
+						);
 
-						if (hitActor->IsA(AMapSection::StaticClass()) && objectToSpawn != ESpawnableObject::None && blockEnabled == false)
+						if (hitActor->IsA(AMapSection::StaticClass()) && objectToSpawn != ESpawnableObject::None && (blockEnabled == false && swapEnabled == false))
 						{
 							AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
 							if (currentlySelectedMapTunnel) {
@@ -197,10 +199,46 @@ void AARPawn::OnScreenTouch()
 									}
 								}
 							}
-							else
+						}
+						else if (hitActor->IsA(AMapSection::StaticClass()) && swapEnabled == true)
+						{
+							GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Section and Swap Enabled")));
+
+							AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
+							if (selectedMapSection->getSectionUsed() == true)
 							{
-								currentlySelectedMapTunnel = nullptr;
+								GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("In use")));
+								if (selectedMapSection == swapSelectedMapSection1)
+								{
+									swapSelectedMapSection1->swapSelectedMaterial(unselectedMapMaterial);
+									swapSelectedMapSection1 = nullptr;
+								}
+								else if (selectedMapSection == swapSelectedMapSection2)
+								{
+									swapSelectedMapSection2->swapSelectedMaterial(unselectedMapMaterial);
+									swapSelectedMapSection2 = nullptr;
+								}
+								else if (!swapSelectedMapSection1)
+								{
+									swapSelectedMapSection1 = selectedMapSection;
+									swapSelectedMapSection1->swapSelectedMaterial(selectedMapMaterial);
+								}
+								else if (!swapSelectedMapSection2)
+								{
+									swapSelectedMapSection2 = selectedMapSection;
+									swapSelectedMapSection2->swapSelectedMaterial(selectedMapMaterial);
+								}
+
+								if (swapSelectedMapSection1 && swapSelectedMapSection2)
+								{
+									mapSetupWidget->getConfirmButton()->SetVisibility(ESlateVisibility::Visible);
+								}
+								else
+								{
+									mapSetupWidget->getConfirmButton()->SetVisibility(ESlateVisibility::Hidden);
+								}
 							}
+
 						}
 					}
 				}
@@ -208,6 +246,7 @@ void AARPawn::OnScreenTouch()
 		}
 	}
 }
+
 
 void AARPawn::SpawnMap()
 {
@@ -502,5 +541,22 @@ void AARPawn::blockTunnel()
 		blockEnabled = false;
 		mapSetupWidget->resetObjectType();
 		manager->displayTunnelUsed(false);
+	}
+}
+
+void AARPawn::swapObjects()
+{
+	if (swapSelectedMapSection1 && swapSelectedMapSection2)
+	{
+		AActor* actorToSwap1 = swapSelectedMapSection1->getCurrentEntity();
+		AActor* actorToSwap2 = swapSelectedMapSection2->getCurrentEntity();
+		swapSelectedMapSection1->spawnActorAtPoint(actorToSwap2);
+		swapSelectedMapSection1->setCurrentEntity(actorToSwap2);
+		swapSelectedMapSection2->spawnActorAtPoint(actorToSwap1);
+		swapSelectedMapSection2->setCurrentEntity(actorToSwap1);
+		manager->sendSwapSectionCommand(swapSelectedMapSection1, swapSelectedMapSection2);
+		swapEnabled = false;
+		mapSetupWidget->resetObjectType();
+		manager->displaySectionSwap(false);
 	}
 }

@@ -117,6 +117,7 @@ void AARVRGameManager::BeginPlay()
 	sortMapSections();
 	currentlyOccupiedSection = mapSections[0];
 	currentlyOccupiedSection->toggleFog(false);
+	currentlyOccupiedSection->setSectionUsed(true);
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Starting Section: %s"), *currentlyOccupiedSection->GetName()));
 
 	setupPools();
@@ -129,15 +130,22 @@ void AARVRGameManager::Tick(float DeltaTime)
 	ManageCommandQueue();
 	float currentTime = GetWorld()->GetTimeSeconds();
 	const float resendDelay = 1.0f;
-	for (TSharedPtr<Command>& command : waitingForConfirmationList)
+
+	TArray<TSharedPtr<Command>> commandsToResend;
+
+	for (const TSharedPtr<Command>& command : waitingForConfirmationList)
 	{
 		if (currentTime - command->timeLastSent >= resendDelay)
 		{
-			AddToOutgoingCommandQueue(command);
-			command->timeLastSent = currentTime;
+			commandsToResend.Add(command);
 		}
 	}
 
+	for (TSharedPtr<Command>& command : commandsToResend)
+	{
+		command->timeLastSent = currentTime;
+		ResendCommand(command);
+	}
 }
 
 void AARVRGameManager::ManageCommandQueue()
@@ -243,6 +251,15 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 			sendReceiptCommand(command->sequenceCount);
 			break;
 		}
+		case(EMessageType::SwapSections):
+		{
+			TSharedPtr<SwapSectionCommand> command = MakeShared<SwapSectionCommand>();
+			command->deserialise(this, receivedPacket);
+			incomingCommandQueue.Enqueue(command);
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Swap Section Message Received"));
+			sendReceiptCommand(command->sequenceCount);
+			break;
+		}
 		case(EMessageType::ReceiptConfirmation):
 		{
 			TSharedPtr<ReceiptConfirmationCommand> command = MakeShared<ReceiptConfirmationCommand>();
@@ -308,10 +325,47 @@ void AARVRGameManager::AddToOutgoingCommandQueue(TSharedPtr<Command> command)
 	case(EMessageType::SwitchTurns):
 	case(EMessageType::UpdateHealth):
 	case(EMessageType::BlockTunnel):
+	case(EMessageType::SwapSections):
 	{
 		waitingForConfirmationList.Add(command);
 		break;
 	}
+	}
+}
+
+void AARVRGameManager::ResendCommand(TSharedPtr<Command> command)
+{
+	if (!arPlayerPlaneSelected)
+	{
+		return;
+	}
+
+	if (command->commandType == EMessageType::PlayerMovement)
+	{
+		TSharedPtr<PlayerMovementCommand> moveCommand = StaticCastSharedPtr<PlayerMovementCommand>(command);
+		if (currentlyOccupiedSection->getCurrentEntity()) {
+			AActor* currentEntity = currentlyOccupiedSection->getCurrentEntity();
+			if (currentEntity->IsA(ALivingPooledEntity::StaticClass()))
+			{
+				ALivingPooledEntity* livingEntity = Cast<ALivingPooledEntity>(currentEntity);
+				moveCommand->entityIncluded = true;
+				moveCommand->entityPosition = livingEntity->getEntityPosition();
+				moveCommand->entityRotation = livingEntity->getEntityRotation();
+			}
+			else
+			{
+				moveCommand->entityIncluded = false;
+			}
+		}
+		else
+		{
+			moveCommand->entityIncluded = false;
+		}
+		outgoingCommandQueue.Enqueue(moveCommand);
+	}
+	else
+	{
+		outgoingCommandQueue.Enqueue(command);
 	}
 }
 	
@@ -370,54 +424,78 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 {
 	switch (objectType) {
 	case(ESpawnableObject::Goblin): {
-			AObjectPoolActor* goblinPool = *EntityPools.Find(objectType);
-			AActor* goblinEntity = goblinPool->getAvailableEntity();
-			if (goblinEntity && mapSections.Contains(sectionToSpawn)) {
-				UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(goblinEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
-				if (pooledComponent)
-				{
-					pooledComponent->setOwnerSection(sectionToSpawn);
-					sectionToSpawn->spawnActorAtPoint(goblinEntity);
-					sectionToSpawn->setCurrentEntity(goblinEntity);
-					if (LocalRole == EPlayerRole::VR) {
-						Cast<AGoblinPooledEntity>(goblinEntity)->resetHealth();
-						Cast<AGoblinPooledEntity>(goblinEntity)->CreateHealthUI();
+			AObjectPoolActor** goblinPoolPtr = EntityPools.Find(objectType);
+			if (goblinPoolPtr && *goblinPoolPtr)
+			{
+				AObjectPoolActor* goblinPool = *goblinPoolPtr;
+				AActor* goblinEntity = goblinPool->getAvailableEntity();
+				if (goblinEntity && mapSections.Contains(sectionToSpawn)) {
+					UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(goblinEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+					if (pooledComponent)
+					{
+						pooledComponent->setOwnerSection(sectionToSpawn);
+						sectionToSpawn->spawnActorAtPoint(goblinEntity);
+						sectionToSpawn->setCurrentEntity(goblinEntity);
+						if (LocalRole == EPlayerRole::VR) {
+							Cast<AGoblinPooledEntity>(goblinEntity)->resetHealth();
+							Cast<AGoblinPooledEntity>(goblinEntity)->CreateHealthUI();
+						}
 					}
 				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Could not find a valid Object Pool for objectType %d"), objectType);
 			}
 			break;
 		}
 		case(ESpawnableObject::Chest): {
-			AObjectPoolActor* chestPool = *EntityPools.Find(objectType);
-			AActor* chestEntity = chestPool->getAvailableEntity();
-			if (chestEntity && mapSections.Contains(sectionToSpawn)) {
-				UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(chestEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
-				if (pooledComponent)
-				{
-					Cast<AChestPooledEntity>(chestEntity)->resetChest();
-					pooledComponent->setOwnerSection(sectionToSpawn);
-					sectionToSpawn->spawnActorAtPoint(chestEntity);
-					sectionToSpawn->setCurrentEntity(chestEntity);
+			AObjectPoolActor** chestPoolPtr = EntityPools.Find(objectType);
+			if (chestPoolPtr && *chestPoolPtr)
+			{
+				AObjectPoolActor* chestPool = *EntityPools.Find(objectType);
+				AActor* chestEntity = chestPool->getAvailableEntity();
+				if (chestEntity && mapSections.Contains(sectionToSpawn)) {
+					UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(chestEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+					if (pooledComponent)
+					{
+						Cast<AChestPooledEntity>(chestEntity)->resetChest();
+						pooledComponent->setOwnerSection(sectionToSpawn);
+						sectionToSpawn->spawnActorAtPoint(chestEntity);
+						sectionToSpawn->setCurrentEntity(chestEntity);
+					}
 				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Could not find a valid Object Pool for objectType %d"), objectType);
 			}
 			break;
 		}
 		case(ESpawnableObject::Trap): {
-			AObjectPoolActor* trapPool = *EntityPools.Find(objectType);
-			AActor* trapEntity = trapPool->getAvailableEntity();
-			if (trapEntity && mapSections.Contains(sectionToSpawn)) {
-				UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(trapEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
-				if (pooledComponent)
-				{
-					Cast<ATrapPooledEntity>(trapEntity)->resetTrap();
-					pooledComponent->setOwnerSection(sectionToSpawn);
-					sectionToSpawn->spawnActorAtPoint(trapEntity);
-					sectionToSpawn->setCurrentEntity(trapEntity);
-					if (LocalRole == EPlayerRole::VR)
+			AObjectPoolActor** trapPoolPtr = EntityPools.Find(objectType);
+			if (trapPoolPtr && *trapPoolPtr)
+			{
+				AObjectPoolActor* trapPool = *EntityPools.Find(objectType);
+				AActor* trapEntity = trapPool->getAvailableEntity();
+				if (trapEntity && mapSections.Contains(sectionToSpawn)) {
+					UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(trapEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+					if (pooledComponent)
 					{
-						Cast<ATrapPooledEntity>(trapEntity)->toggleMeshVisibility(false);
+						Cast<ATrapPooledEntity>(trapEntity)->resetTrap();
+						pooledComponent->setOwnerSection(sectionToSpawn);
+						sectionToSpawn->spawnActorAtPoint(trapEntity);
+						sectionToSpawn->setCurrentEntity(trapEntity);
+						if (LocalRole == EPlayerRole::VR)
+						{
+							Cast<ATrapPooledEntity>(trapEntity)->toggleMeshVisibility(false);
+						}
 					}
 				}
+			}
+			else
+			{
+				UE_LOG(LogTemp, Error, TEXT("Could not find a valid Object Pool for objectType %d"), objectType);
 			}
 			break;
 		}
@@ -502,49 +580,60 @@ AMapTunnel* AARVRGameManager::getLastTunnelVisited()
 	return lastTunnelVisited;
 }
 
-void AARVRGameManager::interactionConclusion(AActor* concludedEntity)
+void AARVRGameManager::interactionConclusion(TWeakObjectPtr<AActor> concludedEntityPtr)
 {
-	if (concludedEntity->IsA(AGoblinPooledEntity::StaticClass()))
+	if (concludedEntityPtr.IsValid())
 	{
-		AObjectPoolActor* goblinPool = *EntityPools.Find(ESpawnableObject::Goblin);
-		goblinPool->returnToPool(concludedEntity);
-		if (LocalRole == EPlayerRole::VR)
+		// It's safe to use. Get the actual actor pointer.
+		AActor* concludedEntity = concludedEntityPtr.Get();
+
+		if (concludedEntity->IsA(AGoblinPooledEntity::StaticClass()))
 		{
-			if (vrCharacter->getHammerPowerUp() == true)
+			AObjectPoolActor* goblinPool = *EntityPools.Find(ESpawnableObject::Goblin);
+			goblinPool->returnToPool(concludedEntity);
+			if (LocalRole == EPlayerRole::VR)
 			{
-				vrCharacter->turnOffHammerPowerUp();
-			}
-			if (vrCharacter->getHammerPowerDown() == true)
-			{
-				vrCharacter->turnOffHammerPowerDown();
+				if (vrCharacter->getHammerPowerUp() == true)
+				{
+					vrCharacter->turnOffHammerPowerUp();
+				}
+				if (vrCharacter->getHammerPowerDown() == true)
+				{
+					vrCharacter->turnOffHammerPowerDown();
+				}
 			}
 		}
+		if (concludedEntity->IsA(AChestPooledEntity::StaticClass()))
+		{
+			AObjectPoolActor* chestPool = *EntityPools.Find(ESpawnableObject::Chest);
+			chestPool->returnToPool(concludedEntity);
+		}
+
+		if (concludedEntity->IsA(ATrapPooledEntity::StaticClass()))
+		{
+			AObjectPoolActor* trapPool = *EntityPools.Find(ESpawnableObject::Trap);
+			trapPool->returnToPool(concludedEntity);
+		}
+
+		currentlyOccupiedSection->setCurrentEntity(nullptr);
+		currentlyOccupiedSection->setSectionUsed(false);
+
+		TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();
+		command->commandType = EMessageType::SwitchTurns;
+
+		command->sequenceCount = getNextSequenceCount();
+
+		command->playerTurn = EPlayerRole::AR;
+
+		AddToOutgoingCommandQueue(command);
+
+		switchTurns(EPlayerRole::AR);
 	}
-	if (concludedEntity->IsA(AChestPooledEntity::StaticClass()))
+	else
 	{
-		AObjectPoolActor* chestPool = *EntityPools.Find(ESpawnableObject::Chest);
-		chestPool->returnToPool(concludedEntity);
+		// The actor was already destroyed. Log a warning and do nothing to prevent a crash.
+		UE_LOG(LogTemp, Warning, TEXT("InteractionConclusion was called, but the entity was already destroyed."));
 	}
-
-	if (concludedEntity->IsA(ATrapPooledEntity::StaticClass()))
-	{
-		AObjectPoolActor* trapPool = *EntityPools.Find(ESpawnableObject::Trap);
-		trapPool->returnToPool(concludedEntity);
-	}
-
-	currentlyOccupiedSection->setCurrentEntity(nullptr);
-
-	TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();
-	command->commandType = EMessageType::SwitchTurns;
-
-	command->sequenceCount = getNextSequenceCount();
-
-	command->playerTurn = EPlayerRole::AR;
-
-	AddToOutgoingCommandQueue(command);
-
-	switchTurns(EPlayerRole::AR);
-
 
 }
 
@@ -655,13 +744,35 @@ void AARVRGameManager::displaySectionUsed(bool toggle)
 	for (AMapSection* section : mapSections)
 	{
 		if (toggle == true) {
-			if (section->getSectionUsed() == true || section->getSectionVisited())
+			if (section->getSectionUsed() == true || section->getSectionVisited() == true)
 			{
 				section->swapSelectedMaterial(blockedMapMaterial);
 			}
 			else
 			{
 				section->toggleArrowMesh(true);
+			}
+		}
+		else
+		{
+			section->swapSelectedMaterial(regularMapMaterial);
+			section->toggleArrowMesh(false);
+		}
+	}
+}
+
+void AARVRGameManager::displaySectionSwap(bool toggle)
+{
+	for (AMapSection* section : mapSections)
+	{
+		if (toggle == true) {
+			if (section->getSectionUsed() == true)
+			{
+				section->toggleArrowMesh(true);
+			}
+			else
+			{
+				section->swapSelectedMaterial(blockedMapMaterial);
 			}
 		}
 		else
@@ -716,6 +827,37 @@ void AARVRGameManager::sendBlockedWallCommand(AMapTunnel* tunnelToBlock)
 			}
 
 		}
+
+		AddToOutgoingCommandQueue(command);
+
+		if (arPawn->getMapSetup() == true) {
+			TSharedPtr<SwitchTurnsCommand> command2 = MakeShared<SwitchTurnsCommand>();
+			command2->commandType = EMessageType::SwitchTurns;
+
+			command2->sequenceCount = getNextSequenceCount();
+
+			command2->playerTurn = EPlayerRole::VR;
+
+			AddToOutgoingCommandQueue(command2);
+
+			switchTurns(EPlayerRole::VR);
+		}
+	}
+}
+
+void AARVRGameManager::sendSwapSectionCommand(AMapSection* swapSelectedMapSection1, AMapSection* swapSelectedMapSection2)
+{
+	if (LocalRole == EPlayerRole::AR)
+	{
+		TSharedPtr<SwapSectionCommand> command = MakeShared<SwapSectionCommand>();
+
+		command->commandType = EMessageType::SwapSections;
+
+		command->sequenceCount = getNextSequenceCount();
+
+		command->section1Index = mapSections.Find(swapSelectedMapSection1);
+
+		command->section2Index = mapSections.Find(swapSelectedMapSection2);
 
 		AddToOutgoingCommandQueue(command);
 

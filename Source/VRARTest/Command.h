@@ -364,3 +364,54 @@ public:
 
     }
 };
+
+class SwapSectionCommand : public Command
+{
+public:
+    uint32 section1Index;
+
+    uint32 section2Index;
+
+    virtual void execute(AARVRGameManager* manager) override
+    {
+        AMapSection* swapSelectedMapSection1 = manager->getMapSections()[section1Index];
+        AMapSection* swapSelectedMapSection2 = manager->getMapSections()[section2Index];
+        AActor* actorToSwap1 = swapSelectedMapSection1->getCurrentEntity();
+        AActor* actorToSwap2 = swapSelectedMapSection2->getCurrentEntity();
+        swapSelectedMapSection1->spawnActorAtPoint(actorToSwap2);
+        swapSelectedMapSection1->setCurrentEntity(actorToSwap2);
+        swapSelectedMapSection2->spawnActorAtPoint(actorToSwap1);
+        swapSelectedMapSection2->setCurrentEntity(actorToSwap1);
+    }
+
+    TArray<uint8> serialise(AARVRGameManager* manager) override
+    {
+        TArray<uint8> packet;
+        FMemoryWriter Writer(packet, true);
+
+        uint8 MessageType = static_cast<uint8>(commandType);
+        Writer.Serialize(&MessageType, sizeof(uint8));
+
+        Writer.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Writer.Serialize(&section1Index, sizeof(section1Index));
+
+        Writer.Serialize(&section2Index, sizeof(section2Index));
+
+        return packet;
+    }
+
+    void deserialise(AARVRGameManager* manager, TArray<uint8> packet) override
+    {
+        FMemoryReader Reader(packet, true);
+
+        Reader.Serialize(&commandType, sizeof(uint8));
+
+        Reader.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Reader.Serialize(&section1Index, sizeof(section1Index));
+
+        Reader.Serialize(&section2Index, sizeof(section2Index));
+
+    }
+};

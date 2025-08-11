@@ -45,6 +45,14 @@ void UARMapSetupUI::NativeConstruct()
 		BlockButton->SetIsEnabled(false);
 	}
 
+	if (SwapButtonWidget)
+	{
+		SwapButton = SwapButtonWidget->getButton();
+		SwapButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnSwapButtonClicked);
+		SwapButtonWidget->SetVisibility(ESlateVisibility::Hidden);
+		SwapButton->SetIsEnabled(false);
+	}
+
 	if (confirmButton)
 	{
 		confirmButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnConfirmButtonClicked);
@@ -109,6 +117,20 @@ void UARMapSetupUI::OnButtonClicked(EEvent event)
 			{
 				lastSelectedButtonType = currentlySelectedButtonType;
 				currentlySelectedButtonType = EEvent::BLOCK_BUTTON;
+				
+				buttonClicked->notify(event);
+			}
+		}
+		break;
+
+	case(EEvent::SWAP_BUTTON):
+		if (!cooldownArray.Contains(SwapButtonWidget))
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Swap Button Clicked"));
+			if (currentlySelectedButtonType == EEvent::EMPTY || currentlySelectedButtonType != EEvent::SWAP_BUTTON)
+			{
+				lastSelectedButtonType = currentlySelectedButtonType;
+				currentlySelectedButtonType = EEvent::SWAP_BUTTON;
 				buttonClicked->notify(event);
 			}
 		}
@@ -130,6 +152,11 @@ void UARMapSetupUI::OnButtonClicked(EEvent event)
 		{
 			BlockButtonWidget->currentCoolDownAmount = BlockButtonWidget->maxCoolDown;
 			cooldownArray.Add(BlockButtonWidget);
+		}
+		if (currentlySelectedButtonType == EEvent::SWAP_BUTTON)
+		{
+			SwapButtonWidget->currentCoolDownAmount = SwapButtonWidget->maxCoolDown;
+			cooldownArray.Add(SwapButtonWidget);
 		}
 		buttonClicked->notify(event);
 		break;
@@ -201,6 +228,11 @@ void UARMapSetupUI::moveButtons(EEvent event)
 			PlayAnimation(SlideOutBlock);
 
 		}
+		else if (lastSelectedButtonType == EEvent::SWAP_BUTTON)
+		{
+			PlayAnimation(SlideOutSwap);
+
+		}
 		if (currentlySelectedButtonType == EEvent::TREASURE_BUTTON)
 		{
 			PlayAnimation(SlideInTreasure);
@@ -216,6 +248,10 @@ void UARMapSetupUI::moveButtons(EEvent event)
 		else if (currentlySelectedButtonType == EEvent::BLOCK_BUTTON)
 		{
 			PlayAnimation(SlideInBlock);
+		}
+		else if (currentlySelectedButtonType == EEvent::SWAP_BUTTON)
+		{
+			PlayAnimation(SlideInSwap);
 		}
 
 
@@ -233,4 +269,6 @@ void UARMapSetupUI::switchViews()
 	GoblinButton->SetIsEnabled(true);
 	BlockButtonWidget->SetVisibility(ESlateVisibility::Visible);
 	BlockButton->SetIsEnabled(true);
+	SwapButtonWidget->SetVisibility(ESlateVisibility::Visible);
+	SwapButton->SetIsEnabled(true);
 }

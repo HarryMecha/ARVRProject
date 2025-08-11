@@ -21,6 +21,7 @@ enum class EEvent : uint8
 	RESET_BUTTON UMETA(DisplayName = "Reset Button"),
 	GOBLIN_BUTTON UMETA(DisplayName = "Goblin Button"),
 	BLOCK_BUTTON UMETA(DisplayName = "Block Button"),
+	SWAP_BUTTON UMETA(DisplayName = "Swap Button"),
 	EMPTY UMETA(DisplayName = "Empty")
 };
 

@@ -32,7 +32,10 @@ public:
 
 	void toggleArrowMesh(bool toggle)
 	{
+		if (arrowMesh)
+		{
 			arrowMesh->SetVisibility(toggle);
+		}
 	}
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Spawning")

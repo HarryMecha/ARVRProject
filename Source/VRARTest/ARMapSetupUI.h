@@ -95,6 +95,11 @@ protected:
 	UARButtonWidget* BlockButtonWidget;
 
 	UButton* BlockButton;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UARButtonWidget* SwapButtonWidget;
+
+	UButton* SwapButton;
 	
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UHealthBarWidget* dwarfHealthBar;
@@ -124,7 +129,6 @@ protected:
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* SlideOutTrap;
 
-
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* SlideInGoblin;
 
@@ -136,6 +140,12 @@ protected:
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* SlideOutBlock;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* SlideInSwap;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* SlideOutSwap;
 
 private:
 	UFUNCTION()
@@ -171,6 +181,18 @@ private:
 			if (!cooldownArray.Contains(BlockButtonWidget))
 			{
 				OnButtonClicked(EEvent::BLOCK_BUTTON);
+			}
+		}
+	}
+
+	UFUNCTION()
+	void OnSwapButtonClicked()
+	{
+		if (IsValid(this))
+		{
+			if (!cooldownArray.Contains(SwapButtonWidget))
+			{
+				OnButtonClicked(EEvent::SWAP_BUTTON);
 			}
 		}
 	}

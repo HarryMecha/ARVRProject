@@ -25,6 +25,10 @@ AMapSection::AMapSection()
     mapMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
     mapMesh->SetupAttachment(RootComponent);
 
+    arrowMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ArrowMeshComponent"));
+    arrowMesh->SetupAttachment(RootComponent);
+    arrowMesh->SetVisibility(false);
+
     // Create and attach spawn point
     spawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("spawnPoint"));
     spawnPoint->SetupAttachment(RootComponent);

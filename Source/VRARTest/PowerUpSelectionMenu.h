@@ -22,34 +22,49 @@ public:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UImage* AttackOptionImage;
 
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UImage* AttackExplanationImage;
+
 	bool AttackOptionActivated = false;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UImage* SpeedOptionImage;
 
-	bool SpeedOptionActivated = false;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UImage* SpeedExplanationImage;
 
+	bool SpeedOptionActivated = false;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UImage* PotionOptionImage;
-
+	
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UImage* PotionExplanationImage;
+	
 	bool PotionOptionActivated = false;
-
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UImage* CancelOptionImage;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UImage* CancelExplanationImage;
 
 	bool CancelOptionActivated = true;
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UImage* LanternOptionImage;
 
-	bool LanternOptionActivated = false;
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UImage* LanternExplanationImage;
 
+	bool LanternOptionActivated = false;
 
 	TArray<UImage*> imageArray;
 
 	TMap<UImage*, bool> imageMap;
+
+	TMap<UImage*, UImage*> explanationMap;
+
 
 	void reloadMenu(int noHammer, int noSpeed, int noPotion, int noLanten);
 

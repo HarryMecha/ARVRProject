@@ -67,6 +67,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Collision")
 	class UBoxComponent* boxColliderInner;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
+	class UStaticMeshComponent* arrowMesh;
+
+	void toggleArrowMesh(bool toggle)
+	{
+		arrowMesh->SetVisibility(toggle);
+	}
+
 	virtual void Tick(float DeltaTime) override;
 
 	void raiseAllWalls();

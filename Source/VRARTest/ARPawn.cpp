@@ -501,5 +501,6 @@ void AARPawn::blockTunnel()
 		currentlySelectedMapTunnel->swapSelectedMaterial(blockedMapMaterial);
 		blockEnabled = false;
 		mapSetupWidget->resetObjectType();
+		manager->displayTunnelUsed(false);
 	}
 }

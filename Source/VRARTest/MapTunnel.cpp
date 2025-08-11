@@ -48,6 +48,10 @@ AMapTunnel::AMapTunnel()
 	boxColliderInner = CreateDefaultSubobject<UBoxComponent>(TEXT("boxColliderInner"));
 	boxColliderInner->SetupAttachment(RootComponent);
 
+	arrowMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ArrowMeshComponent"));
+	arrowMesh->SetupAttachment(RootComponent);
+	arrowMesh->SetVisibility(false);
+
 }
 
 // Called when the game starts or when spawned

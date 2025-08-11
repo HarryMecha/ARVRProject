@@ -27,6 +27,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
 	class UStaticMeshComponent* mapMesh;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
+	class UStaticMeshComponent* arrowMesh;
+
+	void toggleArrowMesh(bool toggle)
+	{
+			arrowMesh->SetVisibility(toggle);
+	}
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Spawning")
 	class USceneComponent* spawnPoint;
 

@@ -72,6 +72,12 @@ void AARVRGameManager::BeginPlay()
 				mapSection->toggleWalls(false);
 				mapSections.Add(mapSection);
 			}
+			if (actor->Tags.Contains("MapTunnel"))
+			{
+				AMapTunnel* mapTunnel = Cast<AMapTunnel>(actor);
+				mapTunnel->toggleArrowMesh(false);
+				mapTunnels.Add(mapTunnel);
+			}
 			if (vrRepresenationClass && actor->IsA(vrRepresenationClass))
 			{
 				vrRepresenation = Cast<AVRRepresentative>(actor);
@@ -653,10 +659,36 @@ void AARVRGameManager::displaySectionUsed(bool toggle)
 			{
 				section->swapSelectedMaterial(blockedMapMaterial);
 			}
+			else
+			{
+				section->toggleArrowMesh(true);
+			}
 		}
 		else
 		{
 			section->swapSelectedMaterial(regularMapMaterial);
+			section->toggleArrowMesh(false);
+		}
+	}
+}
+
+void AARVRGameManager::displayTunnelUsed(bool toggle)
+{
+	for (AMapTunnel* tunnel : mapTunnels)
+	{
+		if (toggle == true) {
+			if (tunnel->getTunnelBlocked() == true)
+			{
+				tunnel->toggleArrowMesh(false);
+			}
+			else
+			{
+				tunnel->toggleArrowMesh(true);
+			}
+		}
+		else
+		{
+			tunnel->toggleArrowMesh(false);
 		}
 	}
 }

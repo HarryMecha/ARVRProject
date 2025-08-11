@@ -100,7 +100,7 @@ AVRCharacter::AVRCharacter()
 
 	powerUpMenuComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("PowerUpMenuComponent"));
 	powerUpMenuComponent->SetupAttachment(leftHandMesh);
-	powerUpMenuComponent->SetDrawSize(FVector2D(1000, 1000));
+	powerUpMenuComponent->SetDrawSize(FVector2D(1500, 1500));
 	powerUpMenuComponent->SetWidgetSpace(EWidgetSpace::World);
 	powerUpMenuComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -399,6 +399,10 @@ void AVRCharacter::RightTriggerPressed()
 {
 	if (!lanternPowerUp) {
 		rightHandMesh->SetStaticMesh(rightControllerClosedMesh);
+		if (mapOpen)
+		{
+			MapOpenButtonPressed();
+		}
 		if (rightWidgetInteraction)
 		{
 			rightWidgetInteraction->PressPointerKey(EKeys::LeftMouseButton);

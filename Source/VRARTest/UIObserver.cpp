@@ -83,8 +83,8 @@ void UUIObserver::OnNotify_Implementation(EEvent event, float value, bool b)
 		break;
 	
 	case EEvent::BLOCK_BUTTON:
-		arPawn->setObjectToSpawn(ESpawnableObject::None);
 		arPawn->setBlockEnabled(true);
+		arPawn->setObjectToSpawn(ESpawnableObject::None);
 		break;
 
 	case EEvent::CONFIRM_BUTTON_MAIN:

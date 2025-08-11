@@ -48,6 +48,10 @@ public:
 		{
 			manager->displaySectionUsed(false);
 			currentlySelectedMapSection = nullptr;
+			if (blockEnabled == true)
+			{
+				manager->displayTunnelUsed(true);
+			}
 		}
 		else
 		{
@@ -55,6 +59,7 @@ public:
 			{
 				blockEnabled = false;
 				currentlySelectedMapTunnel = nullptr;
+				manager->displayTunnelUsed(false);
 			}
 			manager->displaySectionUsed(true);
 		}

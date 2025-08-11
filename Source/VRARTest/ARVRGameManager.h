@@ -147,6 +147,8 @@ public:
 
 	void displaySectionUsed(bool toggle);
 
+	void displayTunnelUsed(bool toggle);
+
 	void sendBlockedWallCommand(AMapTunnel* tunnelToBlock);
 
 protected:
@@ -177,6 +179,8 @@ private:
 	TSubclassOf<AActor> TrapPooledEntityClass;
 
 	TArray<AMapSection*> mapSections;
+
+	TArray <AMapTunnel*> mapTunnels;
 
 	TArray<TSharedPtr<Command>> waitingForConfirmationList;
 

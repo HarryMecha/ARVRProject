@@ -27,6 +27,8 @@ public:
 
 	void toggleTransparent(bool toggle) override;
 
+	void EnableAI();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

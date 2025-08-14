@@ -9,6 +9,7 @@
 #include "GameFramework/Character.h"
 #include "HeartActor.h"
 #include "Components/SphereComponent.h"
+#include "ARVRGameManager.h"
 #include "LivingPooledEntity.generated.h"
 
 UENUM(BlueprintType)
@@ -106,6 +107,12 @@ public:
 
 	virtual void toggleTransparent(bool toggle) PURE_VIRTUAL(AStaticPooledEntity::toggleTransparent, );
 
+	void setPlayerRole(EPlayerRole role)
+	{
+		playerRole = role;
+	}
+
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -167,5 +174,5 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Materials")
 	UMaterialInterface* transparentMaterial;
 
-
+	EPlayerRole playerRole;
 };

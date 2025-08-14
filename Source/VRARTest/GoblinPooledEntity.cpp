@@ -39,8 +39,19 @@ void AGoblinPooledEntity::BeginPlay()
 void AGoblinPooledEntity::PossessedBy(AController* NewController)
 {
     Super::PossessedBy(NewController);
-
     AIController = Cast<ALivingEntityAIController>(NewController);
+}
+
+void AGoblinPooledEntity::EnableAI()
+{
+    if (GetController() == nullptr)
+    {
+        ALivingEntityAIController* MyAIController = GetWorld()->SpawnActor<ALivingEntityAIController>();
+        if (MyAIController)
+        {
+            MyAIController->Possess(this);
+        }
+    }
 }
 
 void AGoblinPooledEntity::StartAttack() 

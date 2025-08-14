@@ -452,17 +452,18 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 					UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(goblinEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
 					if (pooledComponent)
 					{
-						pooledComponent->setOwnerSection(sectionToSpawn);
-						sectionToSpawn->spawnActorAtPoint(goblinEntity);
-						sectionToSpawn->setCurrentEntity(goblinEntity);
 						if (LocalRole == EPlayerRole::VR) {
 							Cast<AGoblinPooledEntity>(goblinEntity)->toggleFrenzyVR(false);
 							Cast<AGoblinPooledEntity>(goblinEntity)->resetHealth();
 							Cast<AGoblinPooledEntity>(goblinEntity)->CreateHealthUI();
+							Cast<AGoblinPooledEntity>(goblinEntity)->EnableAI();
 						}
 						else if (LocalRole == EPlayerRole::AR) {
 							Cast<AGoblinPooledEntity>(goblinEntity)->toggleFrenzyAR(false);
 						}
+						pooledComponent->setOwnerSection(sectionToSpawn);
+						sectionToSpawn->spawnActorAtPoint(goblinEntity);
+						sectionToSpawn->setCurrentEntity(goblinEntity);
 					}
 				}
 			}

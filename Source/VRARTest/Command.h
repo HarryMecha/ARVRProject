@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "VRARTest.h"
 #include "ARVRGameManager.h"
+#include "LivingPooledEntity.h"
+#include "PooledEntityInterface.h"
+#include "PooledEntityComponent.h"
 #include "MapSection.h"
 
 class VRARTEST_API Command
@@ -51,8 +54,12 @@ public:
     bool cameraRotationChange = false;
     bool leftHandPositionChange = false;
     bool leftHandRotationChange = false;
+    bool leftHandClosed = false;
+    bool leftHandHammer = false;
     bool rightHandPositionChange = false;
     bool rightHandRotationChange = false;
+    bool rightHandClosed = false;
+    bool rightHandHammer = false;
     bool entityIncluded = false;
 
     virtual void execute(AARVRGameManager* manager) override;
@@ -378,6 +385,35 @@ public:
         AMapSection* swapSelectedMapSection2 = manager->getMapSections()[section2Index];
         AActor* actorToSwap1 = swapSelectedMapSection1->getCurrentEntity();
         AActor* actorToSwap2 = swapSelectedMapSection2->getCurrentEntity();
+        if (actorToSwap1)
+        {
+            UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(actorToSwap1->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+
+            if (pooledComponent)
+            {
+                pooledComponent->setOwnerSection(swapSelectedMapSection2);
+            }
+            else
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Could not find PooledComponent!"));
+
+            }
+        }
+
+        if (actorToSwap2)
+        {
+            UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(actorToSwap2->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+
+            if (pooledComponent)
+            {
+                pooledComponent->setOwnerSection(swapSelectedMapSection1);
+            }
+            else
+            {
+                GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Could not find PooledComponent!"));
+
+            }
+        }
         swapSelectedMapSection1->spawnActorAtPoint(actorToSwap2);
         swapSelectedMapSection1->setCurrentEntity(actorToSwap2);
         swapSelectedMapSection2->spawnActorAtPoint(actorToSwap1);
@@ -412,6 +448,54 @@ public:
         Reader.Serialize(&section1Index, sizeof(section1Index));
 
         Reader.Serialize(&section2Index, sizeof(section2Index));
+
+    }
+};
+
+class ApplyFrenzyCommand : public Command
+{
+public:
+   
+    uint32 sectionIndex;
+
+    virtual void execute(AARVRGameManager* manager) override
+    {
+        AMapSection* selectedMapSection = manager->getMapSections()[sectionIndex];
+        AActor* currentEntity = selectedMapSection->getCurrentEntity();
+        if (currentEntity && currentEntity->IsA(ALivingPooledEntity::StaticClass()))
+        {
+            ALivingPooledEntity* livingEntity = Cast<ALivingPooledEntity>(currentEntity);
+            if (livingEntity && livingEntity->getIsFrenzied() == false)
+            {
+                livingEntity->toggleFrenzyVR(true);
+            }
+        }
+    }
+
+    TArray<uint8> serialise(AARVRGameManager* manager) override
+    {
+        TArray<uint8> packet;
+        FMemoryWriter Writer(packet, true);
+
+        uint8 MessageType = static_cast<uint8>(commandType);
+        Writer.Serialize(&MessageType, sizeof(uint8));
+
+        Writer.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Writer.Serialize(&sectionIndex, sizeof(sectionIndex));
+
+        return packet;
+    }
+
+    void deserialise(AARVRGameManager* manager, TArray<uint8> packet) override
+    {
+        FMemoryReader Reader(packet, true);
+
+        Reader.Serialize(&commandType, sizeof(uint8));
+
+        Reader.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Reader.Serialize(&sectionIndex, sizeof(sectionIndex));
 
     }
 };

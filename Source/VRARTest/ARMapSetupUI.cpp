@@ -53,10 +53,18 @@ void UARMapSetupUI::NativeConstruct()
 		SwapButton->SetIsEnabled(false);
 	}
 
+	if (FrenzyButtonWidget)
+	{
+		FrenzyButton = FrenzyButtonWidget->getButton();
+		FrenzyButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnFrenzyButtonClicked);
+		FrenzyButtonWidget->SetVisibility(ESlateVisibility::Hidden);
+		FrenzyButton->SetIsEnabled(false);
+	}
+
 	if (confirmButton)
 	{
 		confirmButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnConfirmButtonClicked);
-		changeButtonVisibility(confirmButton);
+		changeButtonVisibility(confirmButton, false);
 	}
 
 	if (dwarfHealthBar)
@@ -78,66 +86,8 @@ void UARMapSetupUI::OnButtonClicked(EEvent event)
 {
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("A Button  has been Clicked"));
 
-	switch (event) {
-	case(EEvent::TREASURE_BUTTON):
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Treasure Button Clicked"));
-		if (currentlySelectedButtonType == EEvent::EMPTY || currentlySelectedButtonType != EEvent::TREASURE_BUTTON)
-		{
-			lastSelectedButtonType = currentlySelectedButtonType;
-			currentlySelectedButtonType = EEvent::TREASURE_BUTTON;
-			buttonClicked->notify(event);
-		}
-
-		break;
-	case(EEvent::TRAP_BUTTON):
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Trap Button Clicked"));
-		if (currentlySelectedButtonType == EEvent::EMPTY || currentlySelectedButtonType != EEvent::TRAP_BUTTON)
-		{
-			lastSelectedButtonType = currentlySelectedButtonType;
-			currentlySelectedButtonType = EEvent::TRAP_BUTTON;
-			buttonClicked->notify(event);
-		}
-		break;
-	
-	case(EEvent::GOBLIN_BUTTON):
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Goblin Button Clicked"));
-		if (currentlySelectedButtonType == EEvent::EMPTY || currentlySelectedButtonType != EEvent::GOBLIN_BUTTON)
-		{
-			lastSelectedButtonType = currentlySelectedButtonType;
-			currentlySelectedButtonType = EEvent::GOBLIN_BUTTON;
-			buttonClicked->notify(event);
-		}
-		break;
-
-	case(EEvent::BLOCK_BUTTON):
-		if (!cooldownArray.Contains(BlockButtonWidget))
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Block Button Clicked"));
-			if (currentlySelectedButtonType == EEvent::EMPTY || currentlySelectedButtonType != EEvent::BLOCK_BUTTON)
-			{
-				lastSelectedButtonType = currentlySelectedButtonType;
-				currentlySelectedButtonType = EEvent::BLOCK_BUTTON;
-				
-				buttonClicked->notify(event);
-			}
-		}
-		break;
-
-	case(EEvent::SWAP_BUTTON):
-		if (!cooldownArray.Contains(SwapButtonWidget))
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Swap Button Clicked"));
-			if (currentlySelectedButtonType == EEvent::EMPTY || currentlySelectedButtonType != EEvent::SWAP_BUTTON)
-			{
-				lastSelectedButtonType = currentlySelectedButtonType;
-				currentlySelectedButtonType = EEvent::SWAP_BUTTON;
-				buttonClicked->notify(event);
-			}
-		}
-		break;
-
-	case(EEvent::CONFIRM_BUTTON_MAIN):
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Clicked"));
+	if (event == EEvent::CONFIRM_BUTTON_MAIN)
+	{
 		if (currentlySelectedButtonType == EEvent::TRAP_BUTTON)
 		{
 			trapCount--;
@@ -158,24 +108,42 @@ void UARMapSetupUI::OnButtonClicked(EEvent event)
 			SwapButtonWidget->currentCoolDownAmount = SwapButtonWidget->maxCoolDown;
 			cooldownArray.Add(SwapButtonWidget);
 		}
+		if (currentlySelectedButtonType == EEvent::FRENZY_BUTTON)
+		{
+			FrenzyButtonWidget->currentCoolDownAmount = FrenzyButtonWidget->maxCoolDown;
+			cooldownArray.Add(FrenzyButtonWidget);
+		}
 		buttonClicked->notify(event);
-		break;
+		currentlySelectedButtonType = EEvent::EMPTY;
+		incrimentCooldownArray();
 	}
+	else if (currentlySelectedButtonType != event)
+	{
+		lastSelectedButtonType = currentlySelectedButtonType;
+		currentlySelectedButtonType = event;
+		buttonClicked->notify(event);
+	}
+	else
+	{
+		lastSelectedButtonType = currentlySelectedButtonType;
+		currentlySelectedButtonType = EEvent::EMPTY;
+		buttonClicked->notify(EEvent::EMPTY);
+	}
+
 	moveButtons(currentlySelectedButtonType);
-	incrimentCooldownArray();
 }
 
-void UARMapSetupUI::changeButtonVisibility(UButton* button)
+void UARMapSetupUI::changeButtonVisibility(UButton* button, bool toggle)
 {
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Button Visibility Change"));
 
-	switch (button->GetVisibility()) {
-	case(ESlateVisibility::Hidden):
+	if (toggle == true)
+	{
 		button->SetVisibility(ESlateVisibility::Visible);
-		break;
-	case(ESlateVisibility::Visible):
+	}
+	else if (toggle == false)
+	{
 		button->SetVisibility(ESlateVisibility::Hidden);
-		break;
 	}
 }
 
@@ -210,50 +178,49 @@ void UARMapSetupUI::moveButtons(EEvent event)
 {
 	if (currentlySelectedButtonType != lastSelectedButtonType)
 	{
-		if (lastSelectedButtonType == EEvent::TREASURE_BUTTON)
+		switch (lastSelectedButtonType)
 		{
+		case(EEvent::TREASURE_BUTTON):
 			PlayAnimation(SlideOutTreasure);
-		}
-		else if (lastSelectedButtonType == EEvent::TRAP_BUTTON)
-		{
+			break;
+		case(EEvent::TRAP_BUTTON):
 			PlayAnimation(SlideOutTrap);
-		}
-		else if (lastSelectedButtonType == EEvent::GOBLIN_BUTTON)
-		{
+			break;
+		case(EEvent::GOBLIN_BUTTON):
 			PlayAnimation(SlideOutGoblin);
-
-		}
-		else if (lastSelectedButtonType == EEvent::BLOCK_BUTTON)
-		{
+			break;
+		case(EEvent::BLOCK_BUTTON):
 			PlayAnimation(SlideOutBlock);
-
-		}
-		else if (lastSelectedButtonType == EEvent::SWAP_BUTTON)
-		{
+			break;
+		case(EEvent::SWAP_BUTTON):
 			PlayAnimation(SlideOutSwap);
-
+			break;
+		case(EEvent::FRENZY_BUTTON):
+			PlayAnimation(SlideOutFrenzy);
+			break;
 		}
-		if (currentlySelectedButtonType == EEvent::TREASURE_BUTTON)
+
+		switch (currentlySelectedButtonType)
 		{
+		case(EEvent::TREASURE_BUTTON):
 			PlayAnimation(SlideInTreasure);
-		}
-		else if (currentlySelectedButtonType == EEvent::TRAP_BUTTON)
-		{
+			break;
+		case(EEvent::TRAP_BUTTON):
 			PlayAnimation(SlideInTrap);
-		}
-		else if (currentlySelectedButtonType == EEvent::GOBLIN_BUTTON)
-		{
+			break;
+		case(EEvent::GOBLIN_BUTTON):
 			PlayAnimation(SlideInGoblin);
-		}
-		else if (currentlySelectedButtonType == EEvent::BLOCK_BUTTON)
-		{
+			break;
+		case(EEvent::BLOCK_BUTTON):
 			PlayAnimation(SlideInBlock);
-		}
-		else if (currentlySelectedButtonType == EEvent::SWAP_BUTTON)
-		{
+			break;
+		case(EEvent::SWAP_BUTTON):
 			PlayAnimation(SlideInSwap);
+			break;
+		case(EEvent::FRENZY_BUTTON):
+			PlayAnimation(SlideInFrenzy);
+			break;
 		}
-
 
 		lastSelectedButtonType = currentlySelectedButtonType;
 	}
@@ -271,4 +238,11 @@ void UARMapSetupUI::switchViews()
 	BlockButton->SetIsEnabled(true);
 	SwapButtonWidget->SetVisibility(ESlateVisibility::Visible);
 	SwapButton->SetIsEnabled(true);
+	FrenzyButtonWidget->SetVisibility(ESlateVisibility::Visible);
+	FrenzyButton->SetIsEnabled(true);
+}
+
+void UARMapSetupUI::setPopUpText(FString text)
+{
+	popUpText->SetText(FText::FromString(text));
 }

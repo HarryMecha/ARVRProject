@@ -64,6 +64,12 @@ void UUIConnectionWidget::NativeConstruct()
 		resetButton->OnClicked.AddDynamic(this, &UUIConnectionWidget::OnResetButtonClicked);
 		resetButton->SetVisibility(ESlateVisibility::Hidden);
 	}
+
+	if (popUpText)
+	{
+		setPopUpText("Click On Connection Button");
+		popUpText->SetVisibility(ESlateVisibility::Visible);
+	}
 }
 
 
@@ -136,4 +142,9 @@ void UUIConnectionWidget::OnScaleSliderValueChanged(float value)
 
 	connectionButtonClicked->notify(EEvent::SLIDER_CHANGE, value, false);
 	
+}
+
+void UUIConnectionWidget::setPopUpText(FString text)
+{
+	popUpText->SetText(FText::FromString(text));
 }

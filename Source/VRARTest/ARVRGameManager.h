@@ -35,6 +35,7 @@ enum class EMessageType : uint8
 	UpdateHealth,
 	BlockTunnel,
 	SwapSections,
+	ApplyFrenzy,
 	ReceiptConfirmation
 
 };
@@ -154,10 +155,15 @@ public:
 
 	void displayTunnelUsed(bool toggle);
 
+	void displaySectionFrenzy(bool toggle);
+
 	void sendBlockedWallCommand(AMapTunnel* tunnelToBlock);
 
 	void sendSwapSectionCommand(AMapSection* swapSelectedMapSection1, AMapSection* swapSelectedMapSection2);
 
+	void sendApplyFrenzyCommand(AMapSection* selectedMapSection);
+
+	void changePopUpText(FString text);
 
 protected:
 	// Called when the game starts or when spawned

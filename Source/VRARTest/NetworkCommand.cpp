@@ -56,6 +56,20 @@ void PlayerMovementCommand::execute(AARVRGameManager* manager)
     vrLeftHand->SetRelativeRotation(fixedRotation);
 	}
 
+	if (leftHandClosed == true)
+	{
+		vrLeftHand->SetStaticMesh(vrRepresentative->vrLeftHandClosed);
+
+	}
+	else if (leftHandHammer == true)
+	{
+		vrLeftHand->SetStaticMesh(vrRepresentative->vrLeftHandHammer);
+	}
+	else if (leftHandHammer == false && leftHandClosed == false)
+	{
+		vrLeftHand->SetStaticMesh(vrRepresentative->vrLeftHandOpen);
+	}
+
 	if (rightHandPositionChange)
 	{
 		FVector fixedPosition = FVector(-rightHandPosition.Y, rightHandPosition.X, rightHandPosition.Z);
@@ -67,6 +81,21 @@ void PlayerMovementCommand::execute(AARVRGameManager* manager)
 		FRotator fixedRotation = FRotator(-rightHandRotation.Roll, rightHandRotation.Yaw, -rightHandRotation.Pitch);
 		vrRightHand->SetRelativeRotation(fixedRotation);
 	}
+
+	if (rightHandClosed == true)
+	{
+		vrRightHand->SetStaticMesh(vrRepresentative->vrRightHandClosed);
+	
+	}
+	else if (rightHandHammer == true)
+	{
+		vrRightHand->SetStaticMesh(vrRepresentative->vrRightHandHammer);
+	}
+	else if (rightHandHammer == false && rightHandClosed == false)
+	{
+		vrRightHand->SetStaticMesh(vrRepresentative->vrRightHandOpen);
+	}
+
 	if (entityIncluded)
 	{
 		if (manager->getCurrentlyOccupiedSection()->getCurrentEntity()) {
@@ -110,8 +139,12 @@ TArray<uint8> PlayerMovementCommand::serialise(AARVRGameManager* manager)
 	Writer << cameraRotationChange;
 	Writer << leftHandPositionChange;
 	Writer << leftHandRotationChange;
+	Writer << leftHandClosed;
+	Writer << leftHandHammer;
 	Writer << rightHandPositionChange;
 	Writer << rightHandRotationChange;
+	Writer << rightHandClosed;
+	Writer << rightHandHammer;
 	Writer << entityIncluded;
 
 	if (characterPositionChange) Writer << characterPosition;
@@ -142,8 +175,12 @@ void PlayerMovementCommand::deserialise(AARVRGameManager* manager, TArray<uint8>
 	Reader << cameraRotationChange;
 	Reader << leftHandPositionChange;
 	Reader << leftHandRotationChange;
+	Reader << leftHandClosed;
+	Reader << leftHandHammer;
 	Reader << rightHandPositionChange;
 	Reader << rightHandRotationChange;
+	Reader << rightHandClosed;
+	Reader << rightHandHammer;
 	Reader << entityIncluded;
 
 	// Conditionally read values based on flags

@@ -9,6 +9,8 @@
 #include "UIObserver.h"
 #include "ARMapSetupUI.h"
 #include "ARVRGameManager.h"
+#include "LivingPooledEntity.h"
+#include "PooledEntityInterface.h"
 #include "Components/BoxComponent.h"
 #include "Command.h"
 #include <iostream>
@@ -50,6 +52,7 @@ void AARPawn::BeginPlay()
 	if (mapSetupWidget)
 	{
 		mapSetupWidget->setupUIObserver(this);
+		mapSetupWidget->setPopUpText("Place down all the Chests and Traps by selecting map sections");
 	}
 
 	mapLeftRotate = false;
@@ -115,132 +118,206 @@ void AARPawn::OnScreenTouch()
 			if (!mapSpawned) {
 				changeSelected(hitActor);
 			}
-			else {
+			else
+			{
 				if (manager->getCurrentTurn() == EPlayerRole::AR)
 				{
 					if (hitActor)
 					{
-						GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %s"), *hitActor->GetName()));
-						GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Hit Actor: %d"), StaticCast<uint8>(objectToSpawn)));
-						GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Cyan, FString::Printf(TEXT("swapEnabled is: %s"), (swapEnabled ? TEXT("true") : TEXT("false")))
-						);
-
-						if (hitActor->IsA(AMapSection::StaticClass()) && objectToSpawn != ESpawnableObject::None && (blockEnabled == false && swapEnabled == false))
+						switch (currentInteractionMode)
 						{
-							AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
-							if (currentlySelectedMapTunnel) {
-								currentlySelectedMapTunnel->swapSelectedMaterial(unselectedMapMaterial);
-								currentlySelectedMapTunnel = nullptr;
-								mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
-							}
-							if (selectedMapSection->getSectionUsed() == false && selectedMapSection->getSectionVisited() == false)
+						case EInteractionMode::SpawningObject:
+							if (hitActor->IsA(AMapSection::StaticClass())) 
 							{
-								if (currentlySelectedMapSection == selectedMapSection) {
-									currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
-									currentlySelectedMapSection = nullptr;
-									mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
-								}
-								else
-								{
-									if (!currentlySelectedMapSection)
-									{
-										selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
-										currentlySelectedMapSection = selectedMapSection;
-									}
-									else if (currentlySelectedMapSection != selectedMapSection)
-									{
-										currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
-										selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
-										currentlySelectedMapSection = selectedMapSection;
-									}
-									if (mapSetupWidget->getConfirmButton()->GetVisibility() == ESlateVisibility::Hidden)
-									{
-										mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
-									}
-								}
+								AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
+								OnScreenTouchSpawn(selectedMapSection);
 							}
-							else
-							{
-								currentlySelectedMapSection = nullptr;
-							}
-						}
-						else if (hitActor->IsA(AMapTunnel::StaticClass()) && blockEnabled == true)
-						{
-							AMapTunnel* selectedMapTunnel = Cast<AMapTunnel>(hitActor);
-							if (currentlySelectedMapSection) {
-								currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
-								currentlySelectedMapSection = nullptr;
-								mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
-							}
-							if (selectedMapTunnel->getTunnelBlocked() == false)
-							{
-								if (currentlySelectedMapTunnel == selectedMapTunnel)
-								{
-									currentlySelectedMapTunnel->swapSelectedMaterial(unselectedMapMaterial);
-									currentlySelectedMapTunnel = nullptr;
-									mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
-								}
-								else
-								{
-									if (!currentlySelectedMapTunnel)
-									{
-										selectedMapTunnel->swapSelectedMaterial(selectedMapMaterial);
-										currentlySelectedMapTunnel = selectedMapTunnel;
-									}
-									else if (currentlySelectedMapTunnel != selectedMapTunnel)
-									{
-										currentlySelectedMapTunnel->swapSelectedMaterial(unselectedMapMaterial);
-										selectedMapTunnel->swapSelectedMaterial(selectedMapMaterial);
-										currentlySelectedMapTunnel = selectedMapTunnel;
-									}
-									if (mapSetupWidget->getConfirmButton()->GetVisibility() == ESlateVisibility::Hidden)
-									{
-										mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton());
-									}
-								}
-							}
-						}
-						else if (hitActor->IsA(AMapSection::StaticClass()) && swapEnabled == true)
-						{
-							GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Section and Swap Enabled")));
+							break;
 
-							AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
-							if (selectedMapSection->getSectionUsed() == true)
+						case EInteractionMode::BlockingTunnel:
+							if (hitActor->IsA(AMapTunnel::StaticClass()))
 							{
-								GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("In use")));
-								if (selectedMapSection == swapSelectedMapSection1)
-								{
-									swapSelectedMapSection1->swapSelectedMaterial(unselectedMapMaterial);
-									swapSelectedMapSection1 = nullptr;
-								}
-								else if (selectedMapSection == swapSelectedMapSection2)
-								{
-									swapSelectedMapSection2->swapSelectedMaterial(unselectedMapMaterial);
-									swapSelectedMapSection2 = nullptr;
-								}
-								else if (!swapSelectedMapSection1)
-								{
-									swapSelectedMapSection1 = selectedMapSection;
-									swapSelectedMapSection1->swapSelectedMaterial(selectedMapMaterial);
-								}
-								else if (!swapSelectedMapSection2)
-								{
-									swapSelectedMapSection2 = selectedMapSection;
-									swapSelectedMapSection2->swapSelectedMaterial(selectedMapMaterial);
-								}
-
-								if (swapSelectedMapSection1 && swapSelectedMapSection2)
-								{
-									mapSetupWidget->getConfirmButton()->SetVisibility(ESlateVisibility::Visible);
-								}
-								else
-								{
-									mapSetupWidget->getConfirmButton()->SetVisibility(ESlateVisibility::Hidden);
-								}
+								AMapTunnel* selectedMapTunnel = Cast<AMapTunnel>(hitActor);
+								OnScreenTouchBlock(selectedMapTunnel);
 							}
+							break;
 
+						case EInteractionMode::SwappingObjects:
+							if (hitActor->IsA(AMapSection::StaticClass()))
+							{
+								AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
+								OnScreenTouchSwap(selectedMapSection);
+							}
+							break;
+
+						case EInteractionMode::ApplyingFrenzy:
+							if (hitActor->IsA(AMapSection::StaticClass()))
+							{
+								AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
+								OnScreenTouchFrenzy(selectedMapSection);
+							}
+							break;
+
+						case EInteractionMode::None:
+
+							break;
 						}
 					}
+					else
+					{
+
+					}
+				}
+			}
+		}
+	}
+}
+
+void AARPawn::OnScreenTouchSpawn(AMapSection* selectedMapSection)
+{
+
+	if (selectedMapSection->getSpecialSection() == false && selectedMapSection->getSectionUsed() == false) {
+
+		if (currentlySelectedMapTunnel) {
+			currentlySelectedMapTunnel->swapSelectedMaterial(unselectedMapMaterial);
+			currentlySelectedMapTunnel = nullptr;
+			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
+		}
+		if (currentlySelectedMapSection == selectedMapSection) {
+			currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+			currentlySelectedMapSection = nullptr;
+			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
+		}
+		else
+		{
+			if (!currentlySelectedMapSection)
+			{
+				selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
+				currentlySelectedMapSection = selectedMapSection;
+			}
+			else if (currentlySelectedMapSection != selectedMapSection)
+			{
+				currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+				selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
+				currentlySelectedMapSection = selectedMapSection;
+			}
+			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), true);
+		}
+	}
+}
+
+
+void AARPawn::OnScreenTouchBlock(AMapTunnel* selectedMapTunnel)
+{
+	if (currentlySelectedMapSection) {
+		currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+		currentlySelectedMapSection = nullptr;
+		mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
+	}
+
+	if (selectedMapTunnel->getTunnelBlocked() == false)
+	{
+		if (currentlySelectedMapTunnel == selectedMapTunnel)
+		{
+			currentlySelectedMapTunnel->swapSelectedMaterial(unselectedMapMaterial);
+			currentlySelectedMapTunnel = nullptr;
+			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
+		}
+		else
+		{
+			if (!currentlySelectedMapTunnel)
+			{
+				selectedMapTunnel->swapSelectedMaterial(selectedMapMaterial);
+				currentlySelectedMapTunnel = selectedMapTunnel;
+			}
+			else if (currentlySelectedMapTunnel != selectedMapTunnel)
+			{
+				currentlySelectedMapTunnel->swapSelectedMaterial(unselectedMapMaterial);
+				selectedMapTunnel->swapSelectedMaterial(selectedMapMaterial);
+				currentlySelectedMapTunnel = selectedMapTunnel;
+			}
+				mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), true);
+		}
+	}
+}
+
+
+void AARPawn::OnScreenTouchSwap(AMapSection* selectedMapSection)
+{
+	if (selectedMapSection->getSpecialSection() == false && selectedMapSection->getSectionUsed() == true) 
+	{
+		if (selectedMapSection->getSectionUsed() == true)
+		{
+			if (selectedMapSection == swapSelectedMapSection1)
+			{
+				swapSelectedMapSection1->swapSelectedMaterial(unselectedMapMaterial);
+				swapSelectedMapSection1 = nullptr;
+			}
+			else if (selectedMapSection == swapSelectedMapSection2)
+			{
+				swapSelectedMapSection2->swapSelectedMaterial(unselectedMapMaterial);
+				swapSelectedMapSection2 = nullptr;
+			}
+			else if (!swapSelectedMapSection1)
+			{
+				swapSelectedMapSection1 = selectedMapSection;
+				swapSelectedMapSection1->swapSelectedMaterial(selectedMapMaterial);
+			}
+			else if (!swapSelectedMapSection2)
+			{
+				swapSelectedMapSection2 = selectedMapSection;
+				swapSelectedMapSection2->swapSelectedMaterial(selectedMapMaterial);
+			}
+			if (swapSelectedMapSection1 && swapSelectedMapSection2)
+			{
+				mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), true);
+			}
+			else
+			{
+				mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
+
+			}
+		}
+	}
+}
+
+
+void AARPawn::OnScreenTouchFrenzy(AMapSection* selectedMapSection)
+{
+	if (selectedMapSection->getSpecialSection() == false && selectedMapSection->getSectionUsed() == true)
+	{
+		AActor* currentEntity = selectedMapSection->getCurrentEntity();
+		if (currentEntity && currentEntity->IsA(ALivingPooledEntity::StaticClass()))
+		{
+			ALivingPooledEntity* livingEntity = Cast<ALivingPooledEntity>(currentEntity);
+			if (currentlySelectedMapSection) 
+			{
+				currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+				currentlySelectedMapSection = nullptr;
+				mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
+			}
+			if (livingEntity->getIsFrenzied() == false)
+			{
+				if (currentlySelectedMapSection == selectedMapSection)
+				{
+					currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+					currentlySelectedMapSection = nullptr;
+					mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
+				}
+				else
+				{
+					if (!currentlySelectedMapSection)
+					{
+						selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
+						currentlySelectedMapSection = selectedMapSection;
+					}
+					else if (currentlySelectedMapSection != selectedMapSection)
+					{
+						currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+						selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
+						currentlySelectedMapSection = selectedMapSection;
+					}
+					mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), true);
 				}
 			}
 		}
@@ -372,7 +449,7 @@ void AARPawn::UpdatePlanes()
 	}
 }
 
-UUserWidget* AARPawn::getConnectionWidget() const
+UUIConnectionWidget* AARPawn::getConnectionWidget() const
 {
 	return connectionWidget;
 }
@@ -446,11 +523,16 @@ void AARPawn::spawnObject()
 	if (mapSetup == false) {
 		isMapSetup();
 	}
-	manager->spawnEntityAtSection(currentlySelectedMapSection, objectToSpawn);
-	currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
-	currentlySelectedMapSection = nullptr;
-	objectToSpawn = ESpawnableObject::None;
-	mapSetupWidget->resetObjectType();
+	if (currentlySelectedMapSection != nullptr)
+	{
+		manager->spawnEntityAtSection(currentlySelectedMapSection, objectToSpawn);
+		currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+		mapSetupWidget->resetObjectType();
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("spawnObject failed: currentlySelectedMapSection was null!"));
+	}
 }
 
 void AARPawn::SetMapScale(float newScale)
@@ -550,6 +632,34 @@ void AARPawn::swapObjects()
 	{
 		AActor* actorToSwap1 = swapSelectedMapSection1->getCurrentEntity();
 		AActor* actorToSwap2 = swapSelectedMapSection2->getCurrentEntity();
+		if (actorToSwap1)
+		{
+			UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(actorToSwap1->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+
+			if (pooledComponent)
+			{
+				pooledComponent->setOwnerSection(swapSelectedMapSection2);
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Could not find PooledComponent!"));
+
+			}
+		}
+
+		if (actorToSwap2)
+		{
+			UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(actorToSwap2->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+
+			if (pooledComponent)
+			{
+				pooledComponent->setOwnerSection(swapSelectedMapSection1);
+			}
+			else
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Could not find PooledComponent!"));
+			}
+		}
 		swapSelectedMapSection1->spawnActorAtPoint(actorToSwap2);
 		swapSelectedMapSection1->setCurrentEntity(actorToSwap2);
 		swapSelectedMapSection2->spawnActorAtPoint(actorToSwap1);
@@ -560,3 +670,89 @@ void AARPawn::swapObjects()
 		manager->displaySectionSwap(false);
 	}
 }
+
+void AARPawn::applyFrenzy()
+{
+	if (currentlySelectedMapSection)
+	{
+		AActor* entity = currentlySelectedMapSection->getCurrentEntity();
+		if (entity->IsA(ALivingPooledEntity::StaticClass()))
+		{
+			ALivingPooledEntity* livingEntity = Cast<ALivingPooledEntity>(entity);
+			livingEntity->toggleFrenzyAR(true);
+			manager->sendApplyFrenzyCommand(currentlySelectedMapSection);
+		}
+		frenzyEnabled = false;
+		mapSetupWidget->resetObjectType();
+		manager->displaySectionFrenzy(false);
+	}
+}
+
+void AARPawn::zoomIntoSection(AMapSection* sectionToZoom)
+{
+	focusedMapSection = sectionToZoom;
+	isZoomedIn = true;
+
+	overviewLocation = GetActorLocation();
+
+	FVector sectionLocation = sectionToZoom->GetActorLocation();
+	zoomedInLocation = FVector(sectionLocation.X, sectionLocation.Y, overviewLocation.Z + zoomOffsetZ);
+	SetActorLocation(zoomedInLocation);
+}
+
+void AARPawn::zoomOutSection()
+{
+	SetActorLocation(overviewLocation);
+}
+
+void AARPawn::setObjectToSpawn(ESpawnableObject objectType)
+{
+	objectToSpawn = objectType;
+
+	if (objectToSpawn != ESpawnableObject::None)
+	{
+		manager->displaySectionUsed(true);
+	}
+	else
+	{
+		manager->displaySectionUsed(false);
+	}
+}
+
+void AARPawn::setInteractionMode(EInteractionMode newMode, ESpawnableObject object)
+{
+	setBlockEnabled(false);
+	setSwapEnabled(false);
+	setFrenzyEnabled(false);
+	manager->displayTunnelUsed(false);
+	manager->displaySectionSwap(false);
+	manager->displaySectionFrenzy(false);
+	setObjectToSpawn(ESpawnableObject::None);
+	currentInteractionMode = newMode;
+	
+	switch (newMode)
+	{
+	case EInteractionMode::None:
+		break;
+
+	case EInteractionMode::SpawningObject:
+		setObjectToSpawn(object);
+		break;
+
+	case EInteractionMode::BlockingTunnel:
+		setBlockEnabled(true);
+		manager->displayTunnelUsed(true);
+		break;
+
+	case EInteractionMode::SwappingObjects:
+		setSwapEnabled(true);
+		manager->displaySectionSwap(true);
+		break;
+
+	case EInteractionMode::ApplyingFrenzy:
+		setFrenzyEnabled(true);
+		manager->displaySectionFrenzy(true);
+		break;
+	}
+}
+

@@ -179,12 +179,14 @@ void AUDPCommunicationsManager::setHostDevice(bool isHost)
 		communicationPort = 7001;
 		listeningPort = 7002;
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Host Device"));
+		manager->changePopUpText("Connection Selected, waiting for other player...");
 		hostDevice = true;
 	}
 	else {
 		communicationPort = 7002;
 		listeningPort = 7001;
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Client Device"));
+		manager->changePopUpText("Connection Selected, waiting for other player...");
 		hostDevice = false;
 	}
 	deviceTypeSelected = true;

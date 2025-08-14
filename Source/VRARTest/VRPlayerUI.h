@@ -67,9 +67,12 @@ public:
 		}
 	}
 
+	void setPopUpText(FString text);
+
 protected:
 	
-
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UTextBlock* popUpText;
 
 private:
 	

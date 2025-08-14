@@ -65,6 +65,7 @@ void AGoblinPooledEntity::OnLeftHandOverlap(UPrimitiveComponent* OverlappedComp,
             if (!playerBeenAttacked)
             {
                 Cast<AVRCharacter>(OtherActor)->modifyHealth(-1.0f);
+
                 playerBeenAttacked = true;
             }
         }
@@ -159,5 +160,31 @@ void AGoblinPooledEntity::OnAttackMontageEnded(UAnimMontage* Montage, bool bInte
         {
             changeState(ELivingEntityState::Idle);
         }
+    }
+}
+
+void AGoblinPooledEntity::toggleTransparent(bool toggle)
+{
+    if (toggle == true && isTransparent == false)
+    {
+        GetMesh()->SetMaterial(0, transparentMaterial);
+        attackRangeCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        chaseRangeCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        LeftHandCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+        isTransparent = true;
+    }
+    else if (toggle == false && isTransparent == true)
+    {
+        if (isFrenzied == true) {
+            GetMesh()->SetMaterial(0, frenzyMaterial);
+        }
+        else if (isFrenzied == false)
+        {
+            GetMesh()->SetMaterial(0, regularMaterial);
+        }
+        attackRangeCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        chaseRangeCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        LeftHandCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+        isTransparent = false;
     }
 }

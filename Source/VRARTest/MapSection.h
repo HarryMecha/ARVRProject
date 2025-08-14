@@ -105,6 +105,15 @@ public:
 	{
 		return sectionVisited;
 	}
+	bool getSpecialSection()
+	{
+		return specialSection;
+	}
+
+	void setSpecialSection(bool toggle)
+	{
+		specialSection = toggle;
+	}
 
 protected:
 	// Called when the game starts or when spawned
@@ -133,4 +142,5 @@ private:
 
 	bool sectionVisited = false;
 
+	bool specialSection = false;
 };

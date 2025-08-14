@@ -10,7 +10,6 @@ void UVRPlayerUI::NativeConstruct()
 
     if (dwarfHealthBar)
     {
-        UE_LOG(LogTemp, Warning, TEXT("dwarfHealthBar is valid"));
         dwarfHealthBar->setHealthBarHeaderText("Dwarf Health:");
         dwarfHealthBar->SetVisibility(ESlateVisibility::Visible);
     }
@@ -22,6 +21,15 @@ void UVRPlayerUI::NativeConstruct()
     {
         FrozenImage->SetVisibility(ESlateVisibility::Hidden);
     }
+    if (popUpText)
+    {
+        setPopUpText("Click On Connection Button");
+        popUpText->SetVisibility(ESlateVisibility::Visible);
+    }
 
+}
 
+void UVRPlayerUI::setPopUpText(FString text)
+{
+    popUpText->SetText(FText::FromString(text));
 }

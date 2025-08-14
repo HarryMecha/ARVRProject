@@ -15,6 +15,16 @@ class UARMapSetupUI;
 
 #include "ARPawn.generated.h"
 
+UENUM(BlueprintType)
+enum class EInteractionMode : uint8
+{
+	None,
+	SpawningObject,
+	BlockingTunnel,
+	SwappingObjects,
+	ApplyingFrenzy,
+	ZoomingIn
+};
 
 UCLASS()
 class VRARTEST_API AARPawn : public APawn
@@ -31,7 +41,7 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UUserWidget* getConnectionWidget() const;
+	UUIConnectionWidget* getConnectionWidget() const;
 
 	UARMapSetupUI* getMapSetupWidget() const;
 
@@ -41,42 +51,10 @@ public:
 
 	void startARSession();
 
-	void setObjectToSpawn(ESpawnableObject objectType)
-	{
-		objectToSpawn = objectType;
-		if (objectToSpawn == ESpawnableObject::None)
-		{
-			manager->displaySectionUsed(false);
-			manager->displayTunnelUsed(false);
-			manager->displaySectionSwap(false);
-			currentlySelectedMapSection = nullptr;
-			if (blockEnabled == true)
-			{
-				manager->displayTunnelUsed(true);
-			}
-			else if (swapEnabled == true)
-			{
-				manager->displaySectionSwap(true);
-			}
-		}
-		else
-		{
-			if (blockEnabled == true)
-			{
-				blockEnabled = false;
-				currentlySelectedMapTunnel = nullptr;
-				manager->displayTunnelUsed(false);
-			}
-			if (swapEnabled == true)
-			{
-				swapEnabled = false;
-				currentlySelectedMapTunnel = nullptr;
-				manager->displaySectionSwap(false);
-			}
-			manager->displaySectionUsed(true);
-		}
-	}
+	void setInteractionMode(EInteractionMode newMode, ESpawnableObject object = ESpawnableObject::None);
 
+	void setObjectToSpawn(ESpawnableObject objectType);
+	
 	void setBlockEnabled(bool toggle)
 	{
 		blockEnabled = toggle;
@@ -97,7 +75,15 @@ public:
 		return swapEnabled;
 	}
 
+	void setFrenzyEnabled(bool toggle)
+	{
+		frenzyEnabled = toggle;
+	}
 
+	bool getFrenzyEnabled()
+	{
+		return frenzyEnabled;
+	}
 
 	ESpawnableObject getObjectToSpawn()
 	{
@@ -147,6 +133,10 @@ public:
 
 	void swapObjects();
 
+	void applyFrenzy();
+
+	EInteractionMode currentInteractionMode = EInteractionMode::None;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -183,6 +173,9 @@ protected:
 	AMapSection* currentlySelectedMapSection;
 
 	UPROPERTY()
+	AMapSection* focusedMapSection;
+
+	UPROPERTY()
 	AMapTunnel* currentlySelectedMapTunnel;
 
 	UPROPERTY()
@@ -190,6 +183,10 @@ protected:
 
 	UPROPERTY()
 	AMapSection* swapSelectedMapSection2;
+
+	void zoomIntoSection(AMapSection* sectionToZoom);
+
+	void zoomOutSection();
 
 private:	
 
@@ -199,6 +196,14 @@ private:
 	void UpdatePlanes();
 	APlayerController* playerController;
 	
+	void OnScreenTouchSpawn(AMapSection* selectedSection);
+
+	void OnScreenTouchBlock(AMapTunnel* selectedTunnel);
+
+	void OnScreenTouchSwap(AMapSection* selectedSection);
+
+	void OnScreenTouchFrenzy(AMapSection* selectedSection);
+
 	AActor* selectedPlane;
 	UARPlaneGeometry* selectedPlaneGeometry;
 
@@ -238,4 +243,14 @@ private:
 	bool blockEnabled = false;
 
 	bool swapEnabled = false;
+
+	bool frenzyEnabled = false;
+
+	bool isZoomedIn;
+
+	FVector zoomedInLocation;
+
+	FVector overviewLocation;
+
+	float zoomOffsetZ;
 };

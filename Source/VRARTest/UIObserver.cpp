@@ -36,7 +36,6 @@ void UUIObserver::OnNotify_Implementation(EEvent event, float value, bool b)
 
 		udpManager->setDeviceTypeSelected();
 		udpManager->setHostDevice(true);
-
 		break;
 
 	case EEvent::CLIENT_BUTTON:
@@ -67,28 +66,43 @@ void UUIObserver::OnNotify_Implementation(EEvent event, float value, bool b)
 
 	case EEvent::TREASURE_BUTTON:
 		if (arPawn) {
-			arPawn->setObjectToSpawn(ESpawnableObject::Chest);
+			arPawn->setInteractionMode(EInteractionMode::SpawningObject, ESpawnableObject::Chest);
 		}
 		break;
 
 	case EEvent::TRAP_BUTTON:
-		arPawn->setObjectToSpawn(ESpawnableObject::Trap);
+		if (arPawn)
+		{
+			arPawn->setInteractionMode(EInteractionMode::SpawningObject, ESpawnableObject::Trap);
+		}
 		break;
 
 	case EEvent::GOBLIN_BUTTON:
-		arPawn->setObjectToSpawn(ESpawnableObject::Goblin);
+		if (arPawn)
+		{
+			arPawn->setInteractionMode(EInteractionMode::SpawningObject, ESpawnableObject::Goblin);
+		}
 		break;
 	
 	case EEvent::BLOCK_BUTTON:
-		arPawn->setBlockEnabled(true);
-		arPawn->setSwapEnabled(false);
-		arPawn->setObjectToSpawn(ESpawnableObject::None);
+		if (arPawn)
+		{
+			arPawn->setInteractionMode(EInteractionMode::BlockingTunnel);
+		}
 		break;
 
 	case EEvent::SWAP_BUTTON:
-		arPawn->setSwapEnabled(true);
-		arPawn->setBlockEnabled(false);
-		arPawn->setObjectToSpawn(ESpawnableObject::None);
+		if (arPawn)
+		{
+			arPawn->setInteractionMode(EInteractionMode::SwappingObjects);
+		}
+		break;
+
+	case EEvent::FRENZY_BUTTON:
+		if (arPawn)
+		{
+			arPawn->setInteractionMode(EInteractionMode::ApplyingFrenzy);
+		}
 		break;
 
 	case EEvent::CONFIRM_BUTTON_MAIN:
@@ -97,19 +111,25 @@ void UUIObserver::OnNotify_Implementation(EEvent event, float value, bool b)
 		{
 			arPawn->blockTunnel();
 			arPawn->resetSelection();
-			arPawn->getMapSetupWidget()->changeButtonVisibility(arPawn->getMapSetupWidget()->getConfirmButton());
+			arPawn->getMapSetupWidget()->changeButtonVisibility(arPawn->getMapSetupWidget()->getConfirmButton(),false);
 		}
 		else if (arPawn->getSwapEnabled() == true)
 		{
 			arPawn->swapObjects();
 			arPawn->resetSelection();
-			arPawn->getMapSetupWidget()->changeButtonVisibility(arPawn->getMapSetupWidget()->getConfirmButton());
+			arPawn->getMapSetupWidget()->changeButtonVisibility(arPawn->getMapSetupWidget()->getConfirmButton(), false);
+		}
+		else if (arPawn->getFrenzyEnabled() == true)
+		{
+			arPawn->applyFrenzy();
+			arPawn->resetSelection();
+			arPawn->getMapSetupWidget()->changeButtonVisibility(arPawn->getMapSetupWidget()->getConfirmButton(), false);
 		}
 		else
 		{
 			arPawn->spawnObject();
 			arPawn->resetSelection();
-			arPawn->getMapSetupWidget()->changeButtonVisibility(arPawn->getMapSetupWidget()->getConfirmButton());
+			arPawn->getMapSetupWidget()->changeButtonVisibility(arPawn->getMapSetupWidget()->getConfirmButton(), false);
 		}
 
 		break;
@@ -130,6 +150,12 @@ void UUIObserver::OnNotify_Implementation(EEvent event, float value, bool b)
 		if (arPawn)
 		{
 			arPawn->resetARState();
+		}
+		break;
+	case EEvent::EMPTY:
+		if (arPawn)
+		{
+			arPawn->setInteractionMode(EInteractionMode::None);
 		}
 		break;
 	}

@@ -21,18 +21,35 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VR Components")
 	UStaticMeshComponent* vrLeftHand;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VR Components")
+	UStaticMesh* vrLeftHandOpen;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VR Components")
+	UStaticMesh* vrLeftHandClosed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VR Components")
+	UStaticMesh* vrLeftHandHammer;
+
 	UStaticMeshComponent* getVRLeftHand() { return vrLeftHand; }
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VR Components")
 	UStaticMeshComponent* vrRightHand;
 
-	UStaticMeshComponent* getVRRightHand() { return vrRightHand; }
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VR Components")
+	UStaticMesh* vrRightHandOpen;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VR Components")
+	UStaticMesh* vrRightHandClosed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "VR Components")
+	UStaticMesh* vrRightHandHammer;
+
+	UStaticMeshComponent* getVRRightHand() { return vrRightHand; }
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VR Components")
 	UStaticMeshComponent* vrHead;
 
-	UStaticMeshComponent* getVRHead() { return vrLeftHand; }
+	UStaticMeshComponent* getVRHead() { return vrHead; }
 
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "VR Components")

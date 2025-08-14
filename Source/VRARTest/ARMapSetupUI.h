@@ -22,7 +22,7 @@ class VRARTEST_API UARMapSetupUI : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 
-	void changeButtonVisibility(UButton* button);
+	void changeButtonVisibility(UButton* button, bool toggle);
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void setupUIObserver(AARPawn* pawn);
@@ -75,6 +75,8 @@ public:
 		}
 	}
 
+	void setPopUpText(FString text);
+
 protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UARButtonWidget* TreasureButtonWidget;
@@ -100,6 +102,11 @@ protected:
 	UARButtonWidget* SwapButtonWidget;
 
 	UButton* SwapButton;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UARButtonWidget* FrenzyButtonWidget;
+
+	UButton* FrenzyButton;
 	
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UHealthBarWidget* dwarfHealthBar;
@@ -109,6 +116,11 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UButton* confirmButton;
+
+	/*
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UButton* zoomButton;
+	*/
 
 	UPROPERTY()
 	//subject for host button clicked
@@ -146,6 +158,15 @@ protected:
 
 	UPROPERTY(meta = (BindWidgetAnim), Transient)
 	UWidgetAnimation* SlideOutSwap;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* SlideInFrenzy;
+
+	UPROPERTY(meta = (BindWidgetAnim), Transient)
+	UWidgetAnimation* SlideOutFrenzy;
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UTextBlock* popUpText;
 
 private:
 	UFUNCTION()
@@ -198,6 +219,18 @@ private:
 	}
 
 	UFUNCTION()
+	void OnFrenzyButtonClicked()
+	{
+		if (IsValid(this))
+		{
+			if (!cooldownArray.Contains(FrenzyButtonWidget))
+			{
+				OnButtonClicked(EEvent::FRENZY_BUTTON);
+			}
+		}
+	}
+
+	UFUNCTION()
 	void OnConfirmButtonClicked()
 	{
 		OnButtonClicked(EEvent::CONFIRM_BUTTON_MAIN);
@@ -216,4 +249,5 @@ private:
 	int trapCount = 5;
 
 	TArray<UARButtonWidget*> cooldownArray;
+
 };

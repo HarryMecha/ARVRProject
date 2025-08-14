@@ -369,11 +369,12 @@ void AVRCharacter::LeftTriggerPressed()
 
 		}
 
-		if (leftControllerInBackCollider)
+		if (leftControllerInBackCollider && hammerEquipped == false)
 		{
 			leftHandHammerMesh->SetVisibility(true);
 			leftHandMesh->SetVisibility(false);
 			leftControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			hammerEquipped = true;
 		}
 	}
 
@@ -391,6 +392,7 @@ void AVRCharacter::LeftTriggerReleased()
 		leftHandHammerMesh->SetVisibility(false);
 		leftHandMesh->SetVisibility(true);
 		leftControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		hammerEquipped = false;
 
 	}
 }
@@ -415,11 +417,12 @@ void AVRCharacter::RightTriggerPressed()
 			rightControllerRayMesh->SetVisibility(true);
 			rightWidgetInteraction->SetActive(true);
 		}
-		if (rightControllerInBackCollider)
+		if (rightControllerInBackCollider && hammerEquipped == false)
 		{
 			rightHandHammerMesh->SetVisibility(true);
 			rightHandMesh->SetVisibility(false);
 			rightControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			hammerEquipped = true;
 
 		}
 	}
@@ -447,6 +450,7 @@ void AVRCharacter::RightTriggerReleased()
 			rightHandHammerMesh->SetVisibility(false);
 			rightHandMesh->SetVisibility(true);
 			rightControllerHammerCollider->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+			hammerEquipped = false;
 
 		}
 	}
@@ -618,6 +622,17 @@ void AVRCharacter::hasCharacterMoved()
 		prevLeftHandRotation = LeftHandRotation;
 	}
 
+	if (leftHandMesh->GetStaticMesh() == leftControllerClosedMesh && leftHandMesh->IsVisible())
+	{
+		command->leftHandClosed = true;
+	}
+	
+	if (leftHandHammerMesh->IsVisible())
+	{
+		command->leftHandHammer = true;
+	}
+
+
 	if (!RightHandPosition.Equals(prevRightHandPosition, PositionTolerance))
 	{
 		command->rightHandPositionChange = true;
@@ -630,6 +645,16 @@ void AVRCharacter::hasCharacterMoved()
 		command->rightHandRotationChange = true;
 		command->rightHandRotation = RightHandRotation;
 		prevRightHandRotation = RightHandRotation;
+	}
+
+	if (rightHandMesh->GetStaticMesh() == rightControllerClosedMesh && rightHandMesh->IsVisible())
+	{
+		command->rightHandClosed = true;
+	}
+
+	if (rightHandHammerMesh->IsVisible())
+	{
+		command->rightHandHammer = true;
 	}
 
 	if (command->characterPositionChange || command->characterRotationChange ||

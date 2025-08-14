@@ -29,7 +29,8 @@ ALivingPooledEntity::ALivingPooledEntity()
 void ALivingPooledEntity::BeginPlay()
 {
     Super::BeginPlay();
-    maxHealth = currentHealth;
+    currentMaxHealth = maxHealth;
+    currentHealth = currentMaxHealth;
 
     if (attackRangeCollider)
     {
@@ -45,6 +46,8 @@ void ALivingPooledEntity::BeginPlay()
     }
    
     currentState = ELivingEntityState::Idle;
+
+    originalScale = GetActorRelativeScale3D();
 }
 
 void ALivingPooledEntity::takeDamage(float amount)
@@ -110,11 +113,11 @@ void ALivingPooledEntity::CreateHealthUI()
 
     float spacing = 20.0f;
 
-    for (int i = 0; i < maxHealth; i++)
+    for (int i = 0; i < currentMaxHealth; i++)
     {
-        float horizontalOffset = (i - (maxHealth - 1) / 2.0f) * spacing;
+        float horizontalOffset = (i - (currentMaxHealth - 1) / 2.0f) * spacing;
 
-        FVector spawnLocation = GetActorLocation() + FVector(0, horizontalOffset, verticalHeartOffset);
+        FVector spawnLocation = GetActorLocation() + FVector(0, horizontalOffset, currentVerticalHeartOffset);
         FRotator spawnRotation = FRotator(0.0f, 90.0f, 0.0f);
 
         AHeartActor* heart = GetWorld()->SpawnActor<AHeartActor>(heartActorClass, spawnLocation, spawnRotation);
@@ -184,5 +187,50 @@ void ALivingPooledEntity::OnChaseRangeExitOverlap(UPrimitiveComponent* Overlappe
         }
         changeState(ELivingEntityState::Idle);
         playerInChaseCollider = false;
+    }
+}
+
+void ALivingPooledEntity::toggleFrenzyVR(bool toggle)
+{
+    if (toggle == true)
+    {
+        isFrenzied = true;
+        SetActorScale3D(originalScale * 1.5f); //works with VR Perfect but is not fine for AR, maybe find a way to differentiate
+        GetMesh()->SetMaterial(0, frenzyMaterial);
+        DestroyHealthUI();
+        currentMaxHealth  = maxHealth + 2;
+        currentVerticalHeartOffset = verticalHeartOffset * 1.5f;
+        resetHealth();
+        CreateHealthUI();
+    }
+    else if (toggle == false)
+    { //hearts do not reset properly and it seems frenzy doesn't untoggle properly
+        isFrenzied = false;
+        SetActorRelativeScale3D(originalScale);
+        GetMesh()->SetMaterial(0, regularMaterial);
+        DestroyHealthUI();
+        currentMaxHealth = maxHealth;
+        currentVerticalHeartOffset = verticalHeartOffset;
+    }
+}
+
+void ALivingPooledEntity::toggleFrenzyAR(bool toggle)
+{
+    if (toggle == true)
+    {
+
+        isFrenzied = true;
+        SetActorRelativeScale3D(originalScale * 1.5f);
+        GetMesh()->SetMaterial(0, frenzyMaterial);
+        DestroyHealthUI();
+        currentMaxHealth = maxHealth + 2;
+    }
+    else if (toggle == false)
+    { 
+        isFrenzied = false;
+        SetActorRelativeScale3D(originalScale);
+        GetMesh()->SetMaterial(0, regularMaterial);
+        currentMaxHealth = maxHealth;
+        verticalHeartOffset = 0.0f;
     }
 }

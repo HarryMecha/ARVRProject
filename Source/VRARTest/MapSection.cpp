@@ -113,12 +113,15 @@ void AMapSection::spawnActorAtPoint(AActor* actorToSpawn)
 
 void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-    if (OtherActor->IsA(AVRCharacter::StaticClass()) && OtherComp->IsA(UCapsuleComponent::StaticClass()))
+    if (OtherActor->IsA(AVRCharacter::StaticClass()))
     {
         AVRCharacter* vrCharacter = Cast<AVRCharacter>(OtherActor);
         if (vrCharacter->getSpeedPowerUp() == false) {
             if (arvrmanager->getCurrentlyOccupiedSection() != this) {
-                toggleWalls(true);
+                if (vrCharacter->GetRootComponent())
+                {
+                    toggleWalls(true);
+                }
                 if (!currentEntity)
                 {
                     TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();

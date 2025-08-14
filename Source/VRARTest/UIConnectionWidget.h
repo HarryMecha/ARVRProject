@@ -54,6 +54,8 @@ public:
 		return resetButton;
 	}
 
+	void setPopUpText(FString text);
+
 protected:
 	virtual void NativeConstruct() override;
 
@@ -88,6 +90,8 @@ protected:
 	UPROPERTY()
 	UUIObserver* UIObserverInstance;
 
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
+	UTextBlock* popUpText;
 
 private:
 	

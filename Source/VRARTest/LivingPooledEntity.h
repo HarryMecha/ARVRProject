@@ -41,9 +41,16 @@ public:
 
 	float maxHealth;
 
+	float currentMaxHealth;
+
 	float getMaxHealth()
 	{
 		return maxHealth;
+	}
+
+	float getCurrentMaxHealth()
+	{
+		return currentMaxHealth;
 	}
 
 	float currentHealth;
@@ -53,7 +60,7 @@ public:
 		return currentHealth;
 	}
 
-	void resetHealth() { currentHealth = maxHealth; }
+	void resetHealth() { currentHealth = currentMaxHealth; }
 
 	void takeDamage(float amount);
 
@@ -87,7 +94,17 @@ public:
 
 	void setEntityRotation(FRotator newRotation) { RootComponent->SetRelativeRotation(newRotation); };
 
+	void toggleFrenzyVR(bool toggle);
 
+	void toggleFrenzyAR(bool toggle);
+
+
+	bool getIsFrenzied()
+	{
+		return isFrenzied;
+	}
+
+	virtual void toggleTransparent(bool toggle) PURE_VIRTUAL(AStaticPooledEntity::toggleTransparent, );
 
 protected:
 	// Called when the game starts or when spawned
@@ -98,6 +115,9 @@ protected:
 
 
 	float verticalHeartOffset = 0.0f;
+
+
+	float currentVerticalHeartOffset = 0.0f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	USceneComponent* heartRoot;
@@ -133,5 +153,19 @@ protected:
 	AActor* playerRef = nullptr;
 
 	bool isTransparent = false;
+
+	bool isFrenzied = false;
+
+	FVector originalScale;
+
+	UPROPERTY(EditAnywhere, Category = "Materials")
+	UMaterialInterface* regularMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Materials")
+	UMaterialInterface* frenzyMaterial;
+
+	UPROPERTY(EditAnywhere, Category = "Materials")
+	UMaterialInterface* transparentMaterial;
+
 
 };

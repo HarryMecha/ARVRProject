@@ -15,6 +15,9 @@
 #include "MapTunnel.h"
 #include "HealthBarWidget.h"
 #include "ARMapSetupUI.h"
+#include "VRPlayerUI.h"
+#include "UIConnectionWidget.h"
+
 // Sets default values
 AARVRGameManager::AARVRGameManager()
 {
@@ -118,6 +121,7 @@ void AARVRGameManager::BeginPlay()
 	currentlyOccupiedSection = mapSections[0];
 	currentlyOccupiedSection->toggleFog(false);
 	currentlyOccupiedSection->setSectionUsed(true);
+	currentlyOccupiedSection->setSpecialSection(true);
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Starting Section: %s"), *currentlyOccupiedSection->GetName()));
 
 	setupPools();
@@ -182,9 +186,14 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 				udpCommunicationsManager->SendMessage(packet);
 				udpCommunicationsManager->setConnectionEstablished(true);
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Connection Established"));
+				if (LocalRole == EPlayerRole::VR)
+				{
+					changePopUpText("Dark Wizard setting up...");
+				}
 				if (LocalRole == EPlayerRole::AR)
 				{
 					arPawn->startARSession();
+					changePopUpText("Select one of the green planes, to place down the map.");
 				}
 			}
 			break;
@@ -260,6 +269,15 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 			sendReceiptCommand(command->sequenceCount);
 			break;
 		}
+		case(EMessageType::ApplyFrenzy):
+		{
+			TSharedPtr<ApplyFrenzyCommand> command = MakeShared<ApplyFrenzyCommand>();
+			command->deserialise(this, receivedPacket);
+			incomingCommandQueue.Enqueue(command);
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Apply Frenzy Message Received"));
+			sendReceiptCommand(command->sequenceCount);
+			break;
+		}
 		case(EMessageType::ReceiptConfirmation):
 		{
 			TSharedPtr<ReceiptConfirmationCommand> command = MakeShared<ReceiptConfirmationCommand>();
@@ -326,6 +344,7 @@ void AARVRGameManager::AddToOutgoingCommandQueue(TSharedPtr<Command> command)
 	case(EMessageType::UpdateHealth):
 	case(EMessageType::BlockTunnel):
 	case(EMessageType::SwapSections):
+	case(EMessageType::ApplyFrenzy):
 	{
 		waitingForConfirmationList.Add(command);
 		break;
@@ -437,8 +456,12 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 						sectionToSpawn->spawnActorAtPoint(goblinEntity);
 						sectionToSpawn->setCurrentEntity(goblinEntity);
 						if (LocalRole == EPlayerRole::VR) {
+							Cast<AGoblinPooledEntity>(goblinEntity)->toggleFrenzyVR(false);
 							Cast<AGoblinPooledEntity>(goblinEntity)->resetHealth();
 							Cast<AGoblinPooledEntity>(goblinEntity)->CreateHealthUI();
+						}
+						else if (LocalRole == EPlayerRole::AR) {
+							Cast<AGoblinPooledEntity>(goblinEntity)->toggleFrenzyAR(false);
 						}
 					}
 				}
@@ -536,11 +559,27 @@ void AARVRGameManager::switchTurns(EPlayerRole playerTurn)
 	{
 	case(EPlayerRole::AR):
 		currentTurn = playerTurn;
+		if (LocalRole == EPlayerRole::VR)
+		{
+			changePopUpText("Dark Wizard's Turn");
+		}
+		else if (LocalRole == EPlayerRole::AR)
+		{
+			changePopUpText("Your Turn, place down an object or cast a spell");
+		}
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Turn Changed: AR Player")));
 		break;
 
 	case(EPlayerRole::VR):
 		currentTurn = playerTurn;
+		if (LocalRole == EPlayerRole::VR)
+		{
+			changePopUpText("Your Turn");
+		}
+		else if (LocalRole == EPlayerRole::AR)
+		{
+			changePopUpText("Dwarf's Turn");
+		}
 		if (currentlyOccupiedSection)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Section: %s"), *currentlyOccupiedSection->GetName()));
@@ -586,6 +625,9 @@ void AARVRGameManager::interactionConclusion(TWeakObjectPtr<AActor> concludedEnt
 	{
 		// It's safe to use. Get the actual actor pointer.
 		AActor* concludedEntity = concludedEntityPtr.Get();
+
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Yellow, FString::Printf(TEXT("InteractionConclusion for Actor: %s"), *concludedEntity->GetName()));
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Orange, FString::Printf(TEXT("Actor's Class is: %s"), *concludedEntity->GetClass()->GetName()));
 
 		if (concludedEntity->IsA(AGoblinPooledEntity::StaticClass()))
 		{
@@ -651,7 +693,7 @@ void AARVRGameManager::setCurrentlyOccupiedSection(AMapSection* section)
 				if (entity->IsA(AGoblinPooledEntity::StaticClass()))
 				{
 					if (healthBar->Visibility == ESlateVisibility::Hidden) {
-						healthBar->CreateHealthBar(entity->getMaxHealth());
+						healthBar->CreateHealthBar(entity->getCurrentMaxHealth());
 						healthBar->setHealthBarHeaderText("Goblin Health:");
 						healthBar->SetVisibility(ESlateVisibility::Visible);
 					}
@@ -714,7 +756,7 @@ void AARVRGameManager::handleNextSection(AMapTunnel* tunnel, bool speedPowerUp)
 
 						if (ALivingPooledEntity* livingEntity = Cast<ALivingPooledEntity>(currentEntity))
 						{
-							//livingEntity->toggletr  // Example method
+							livingEntity->toggleTransparent(speedPowerUpActive);
 						}
 						else if (AStaticPooledEntity* staticEntity = Cast<AStaticPooledEntity>(currentEntity))
 						{
@@ -804,6 +846,39 @@ void AARVRGameManager::displayTunnelUsed(bool toggle)
 	}
 }
 
+void AARVRGameManager::displaySectionFrenzy(bool toggle)
+{
+	for (AMapSection* section : mapSections)
+	{
+		if (toggle == true) {
+
+			AActor* currentEntity = section->getCurrentEntity();
+
+			if (currentEntity && currentEntity->IsA(ALivingPooledEntity::StaticClass()))
+			{
+				ALivingPooledEntity* livingEntity = Cast<ALivingPooledEntity>(section->getCurrentEntity());
+				if (livingEntity->getIsFrenzied() == false)
+				{
+					section->toggleArrowMesh(true);
+				}
+				else
+				{
+					section->swapSelectedMaterial(blockedMapMaterial);
+				}
+			}
+			else
+			{
+				section->swapSelectedMaterial(blockedMapMaterial);
+			}
+		}
+		else
+		{
+			section->swapSelectedMaterial(regularMapMaterial);
+			section->toggleArrowMesh(false);
+		}
+	}
+}
+
 void AARVRGameManager::sendBlockedWallCommand(AMapTunnel* tunnelToBlock)
 {
 	if (LocalRole == EPlayerRole::AR)
@@ -873,5 +948,58 @@ void AARVRGameManager::sendSwapSectionCommand(AMapSection* swapSelectedMapSectio
 
 			switchTurns(EPlayerRole::VR);
 		}
+	}
+}
+
+void AARVRGameManager::sendApplyFrenzyCommand(AMapSection* selectedMapSection)
+{
+	if (LocalRole == EPlayerRole::AR)
+	{
+		TSharedPtr<ApplyFrenzyCommand> command = MakeShared<ApplyFrenzyCommand>();
+
+		command->commandType = EMessageType::ApplyFrenzy;
+
+		command->sequenceCount = getNextSequenceCount();
+
+		command->sectionIndex = mapSections.Find(selectedMapSection);
+
+		AddToOutgoingCommandQueue(command);
+
+		if (arPawn->getMapSetup() == true) {
+			TSharedPtr<SwitchTurnsCommand> command2 = MakeShared<SwitchTurnsCommand>();
+			command2->commandType = EMessageType::SwitchTurns;
+
+			command2->sequenceCount = getNextSequenceCount();
+
+			command2->playerTurn = EPlayerRole::VR;
+
+			AddToOutgoingCommandQueue(command2);
+
+			switchTurns(EPlayerRole::VR);
+		}
+	}
+}
+
+void AARVRGameManager::changePopUpText(FString text)
+{
+	if (LocalRole == EPlayerRole::AR)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, FString::Printf(TEXT("Changing AR text")));
+
+		if (arPawn->getConnectionWidget()->IsVisible())
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, FString::Printf(TEXT("It's Visible")));
+
+			arPawn->getConnectionWidget()->setPopUpText(text);
+		}
+		else
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, FString::Printf(TEXT("It's Not Visible")));
+			arPawn->getMapSetupWidget()->setPopUpText(text);
+		}
+	}
+	else if (LocalRole == EPlayerRole::VR)
+	{
+		vrCharacter->getVRPlayerUI()->setPopUpText(text);
 	}
 }

@@ -142,6 +142,11 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UVRPlayerUI* vrPlayerUI;
+
+	UVRPlayerUI* getVRPlayerUI()
+	{
+		return vrPlayerUI;
+	}
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Class Decleration")
 	TSubclassOf<UVRPlayerUI> vrPlayerUIClass;
@@ -215,6 +220,7 @@ public:
 	bool speedPowerDownCheck();
 
 	void turnOffLanternPowerUp();
+	
 
 protected:
 	// Called when the game starts or when spawned 
@@ -316,6 +322,8 @@ private:
 	bool speedPowerDown = false;
 
 	bool lanternPowerUp = false;
+
+	bool hammerEquipped = false;
 
 	int speedPowerUpCounter = 0;
 

@@ -104,6 +104,12 @@ void UUIObserver::OnNotify_Implementation(EEvent event, float value, bool b)
 			arPawn->setInteractionMode(EInteractionMode::ApplyingFrenzy);
 		}
 		break;
+	case EEvent::ZOOM_BUTTON:
+    if (arPawn)
+    {
+        arPawn->setInteractionMode(EInteractionMode::ZoomingIn);
+    }
+		break;
 
 	case EEvent::CONFIRM_BUTTON_MAIN:
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Confirm Button Notified"));

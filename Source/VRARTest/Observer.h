@@ -23,6 +23,7 @@ enum class EEvent : uint8
 	BLOCK_BUTTON UMETA(DisplayName = "Block Button"),
 	SWAP_BUTTON UMETA(DisplayName = "Swap Button"),
 	FRENZY_BUTTON UMETA(DisplayName =  "Frenzy Button"),
+	ZOOM_BUTTON UMETA(DisplayName = "Zoom Button"),
 	EMPTY UMETA(DisplayName = "Empty")
 };
 

@@ -32,6 +32,11 @@ public:
 		return confirmButton;
 	}
 
+	UButton* getZoomButton()
+	{
+		return zoomButton;
+	}
+
 	void resetObjectType()
 	{
 		currentlySelectedButtonType = EEvent::EMPTY;
@@ -76,6 +81,11 @@ public:
 	}
 
 	void setPopUpText(FString text);
+	
+	UTextBlock* getZoomButtonTitle()
+	{
+		return ZoomButtonTitle;
+	}
 
 protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
@@ -117,10 +127,11 @@ protected:
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UButton* confirmButton;
 
-	/*
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
 	UButton* zoomButton;
-	*/
+
+	UPROPERTY(BlueprintReadOnly, meta = (BindWidget))
+	UTextBlock* ZoomButtonTitle;
 
 	UPROPERTY()
 	//subject for host button clicked
@@ -228,6 +239,12 @@ private:
 				OnButtonClicked(EEvent::FRENZY_BUTTON);
 			}
 		}
+	}
+
+	UFUNCTION()
+	void OnZoomButtonClicked()
+	{
+		OnButtonClicked(EEvent::ZOOM_BUTTON);
 	}
 
 	UFUNCTION()

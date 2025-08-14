@@ -7,6 +7,7 @@
 #include "ARSessionConfig.h"
 #include "MapSection.h"
 #include "ARVRGameManager.h"
+#include "Camera/CameraComponent.h"
 #include "GameFramework/Pawn.h"
 
 class UUIObserver;
@@ -23,7 +24,8 @@ enum class EInteractionMode : uint8
 	BlockingTunnel,
 	SwappingObjects,
 	ApplyingFrenzy,
-	ZoomingIn
+	ZoomingIn,
+	ZoomingOut
 };
 
 UCLASS()
@@ -137,12 +139,25 @@ public:
 
 	EInteractionMode currentInteractionMode = EInteractionMode::None;
 
+	AMapSection* getCurrentlySelectedMapSection()
+	{
+		return currentlySelectedMapSection;
+	}
+
+	bool getIsZoomedIn()
+	{
+		return isZoomedIn;
+	}
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AR")
 	UARSessionConfig* ARSessionConfig;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	UCameraComponent* cameraComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AR")
 	bool showPlanes = true;
@@ -184,6 +199,16 @@ protected:
 	UPROPERTY()
 	AMapSection* swapSelectedMapSection2;
 
+	void setZoomedIn(bool toggle)
+	{
+		isZoomedIn = toggle;
+	}
+
+	bool getZoomedIn()
+	{
+		return isZoomedIn;
+	}
+
 	void zoomIntoSection(AMapSection* sectionToZoom);
 
 	void zoomOutSection();
@@ -196,6 +221,8 @@ private:
 	void UpdatePlanes();
 	APlayerController* playerController;
 	
+	void OnScreenTouchNone(AMapSection* selectedSection);
+
 	void OnScreenTouchSpawn(AMapSection* selectedSection);
 
 	void OnScreenTouchBlock(AMapTunnel* selectedTunnel);
@@ -250,7 +277,11 @@ private:
 
 	FVector zoomedInLocation;
 
-	FVector overviewLocation;
+	FVector originalLocation;
 
-	float zoomOffsetZ;
+	FVector originalScale;
+
+	float zoomMultiplier = 3.5f;
+
+	float zoomMaxDistance = 50.0;
 };

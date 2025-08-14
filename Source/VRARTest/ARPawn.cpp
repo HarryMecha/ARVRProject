@@ -2,7 +2,6 @@
 
 
 #include "ARPawn.h"
-#include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Blueprint/UserWidget.h"
 #include "UIConnectionWidget.h"
@@ -30,6 +29,8 @@ AARPawn::AARPawn()
 void AARPawn::BeginPlay()
 {
 	Super::BeginPlay();
+
+	cameraComponent = FindComponentByClass<UCameraComponent>();
 
 	AARVRGameManager* Manager = Cast<AARVRGameManager>(UGameplayStatics::GetActorOfClass(GetWorld(), AARVRGameManager::StaticClass()));
 	if (!Manager)
@@ -159,7 +160,11 @@ void AARPawn::OnScreenTouch()
 							break;
 
 						case EInteractionMode::None:
-
+							if (hitActor->IsA(AMapSection::StaticClass()))
+							{
+								AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
+								OnScreenTouchNone(selectedMapSection);
+							}
 							break;
 						}
 					}
@@ -173,15 +178,45 @@ void AARPawn::OnScreenTouch()
 	}
 }
 
+void AARPawn::OnScreenTouchNone(AMapSection* selectedMapSection)
+{
+	if (selectedMapSection->getSpecialSection() == false && isZoomedIn == false)
+	{
+		// Check if clicking the same section that's already selected (deselect it)
+		if (currentlySelectedMapSection == selectedMapSection)
+		{
+			currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+			currentlySelectedMapSection = nullptr;
+			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
+			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getZoomButton(), false);
+		}
+		// Selecting a new section
+		else
+		{
+			// Clear previous selection if any
+			if (currentlySelectedMapSection)
+			{
+				currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+			}
+
+			// Select the new section
+			selectedMapSection->swapSelectedMaterial(selectedMapMaterial);
+			currentlySelectedMapSection = selectedMapSection;
+			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getZoomButton(), true);
+		}
+	}
+}
+
 void AARPawn::OnScreenTouchSpawn(AMapSection* selectedMapSection)
 {
 
 	if (selectedMapSection->getSpecialSection() == false && selectedMapSection->getSectionUsed() == false) {
 
-		if (currentlySelectedMapTunnel) {
-			currentlySelectedMapTunnel->swapSelectedMaterial(unselectedMapMaterial);
-			currentlySelectedMapTunnel = nullptr;
+		if (currentlySelectedMapSection) {
+			currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
+			currentlySelectedMapSection = nullptr;
 			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
+			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getZoomButton(), false);
 		}
 		if (currentlySelectedMapSection == selectedMapSection) {
 			currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
@@ -213,6 +248,7 @@ void AARPawn::OnScreenTouchBlock(AMapTunnel* selectedMapTunnel)
 		currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
 		currentlySelectedMapSection = nullptr;
 		mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
+		mapSetupWidget->changeButtonVisibility(mapSetupWidget->getZoomButton(), false);
 	}
 
 	if (selectedMapTunnel->getTunnelBlocked() == false)
@@ -246,6 +282,14 @@ void AARPawn::OnScreenTouchSwap(AMapSection* selectedMapSection)
 {
 	if (selectedMapSection->getSpecialSection() == false && selectedMapSection->getSectionUsed() == true) 
 	{
+		if (currentlySelectedMapSection)
+		{
+			currentlySelectedMapTunnel->swapSelectedMaterial(unselectedMapMaterial);
+			currentlySelectedMapTunnel = nullptr;
+			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
+			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getZoomButton(), false);
+
+		}
 		if (selectedMapSection->getSectionUsed() == true)
 		{
 			if (selectedMapSection == swapSelectedMapSection1)
@@ -286,6 +330,14 @@ void AARPawn::OnScreenTouchFrenzy(AMapSection* selectedMapSection)
 {
 	if (selectedMapSection->getSpecialSection() == false && selectedMapSection->getSectionUsed() == true)
 	{
+		if (currentlySelectedMapSection)
+		{
+			currentlySelectedMapTunnel->swapSelectedMaterial(unselectedMapMaterial);
+			currentlySelectedMapTunnel = nullptr;
+			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
+			mapSetupWidget->changeButtonVisibility(mapSetupWidget->getZoomButton(), false);
+
+		}
 		AActor* currentEntity = selectedMapSection->getCurrentEntity();
 		if (currentEntity && currentEntity->IsA(ALivingPooledEntity::StaticClass()))
 		{
@@ -528,6 +580,7 @@ void AARPawn::spawnObject()
 		manager->spawnEntityAtSection(currentlySelectedMapSection, objectToSpawn);
 		currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
 		mapSetupWidget->resetObjectType();
+		setInteractionMode(EInteractionMode::None);
 	}
 	else
 	{
@@ -622,6 +675,7 @@ void AARPawn::blockTunnel()
 		currentlySelectedMapTunnel->swapSelectedMaterial(blockedMapMaterial);
 		blockEnabled = false;
 		mapSetupWidget->resetObjectType();
+		setInteractionMode(EInteractionMode::None);
 		manager->displayTunnelUsed(false);
 	}
 }
@@ -667,6 +721,7 @@ void AARPawn::swapObjects()
 		manager->sendSwapSectionCommand(swapSelectedMapSection1, swapSelectedMapSection2);
 		swapEnabled = false;
 		mapSetupWidget->resetObjectType();
+		setInteractionMode(EInteractionMode::None);
 		manager->displaySectionSwap(false);
 	}
 }
@@ -684,6 +739,7 @@ void AARPawn::applyFrenzy()
 		}
 		frenzyEnabled = false;
 		mapSetupWidget->resetObjectType();
+		setInteractionMode(EInteractionMode::None);
 		manager->displaySectionFrenzy(false);
 	}
 }
@@ -693,16 +749,37 @@ void AARPawn::zoomIntoSection(AMapSection* sectionToZoom)
 	focusedMapSection = sectionToZoom;
 	isZoomedIn = true;
 
-	overviewLocation = GetActorLocation();
+	AActor* mapRoot = manager->GetMapRoot();
+
+	originalLocation = mapRoot->GetActorLocation();
+	originalScale = mapRoot->GetActorScale3D();
+
+	FVector newMapScale = originalScale * zoomMultiplier;
 
 	FVector sectionLocation = sectionToZoom->GetActorLocation();
-	zoomedInLocation = FVector(sectionLocation.X, sectionLocation.Y, overviewLocation.Z + zoomOffsetZ);
-	SetActorLocation(zoomedInLocation);
+	FVector focalPoint = cameraComponent->GetComponentLocation() + (cameraComponent->GetForwardVector() * zoomMaxDistance);
+	
+	FVector offsetFromMapRootToSection = sectionLocation - originalLocation;
+	FVector scaledOffset = offsetFromMapRootToSection * zoomMultiplier;
+	FVector newMapLocation = focalPoint - scaledOffset;
+
+	mapRoot->SetActorLocation(newMapLocation);
+	mapRoot->SetActorScale3D(newMapScale);
+	mapSetupWidget->getZoomButtonTitle()->SetText(FText::FromString("Zoom Out"));
 }
 
 void AARPawn::zoomOutSection()
 {
-	SetActorLocation(overviewLocation);
+	isZoomedIn = false;
+	AActor* mapRoot = manager->GetMapRoot();
+	mapRoot->SetActorLocation(originalLocation);
+	mapRoot->SetActorScale3D(originalScale);
+
+	focusedMapSection = nullptr;
+	mapSetupWidget->changeButtonVisibility(mapSetupWidget->getZoomButton(), false);
+	mapSetupWidget->getZoomButtonTitle()->SetText(FText::FromString("Zoom In"));
+
+	currentInteractionMode = EInteractionMode::None;
 }
 
 void AARPawn::setObjectToSpawn(ESpawnableObject objectType)
@@ -727,6 +804,7 @@ void AARPawn::setInteractionMode(EInteractionMode newMode, ESpawnableObject obje
 	manager->displayTunnelUsed(false);
 	manager->displaySectionSwap(false);
 	manager->displaySectionFrenzy(false);
+	mapSetupWidget->changeButtonVisibility(mapSetupWidget->getConfirmButton(), false);
 	setObjectToSpawn(ESpawnableObject::None);
 	currentInteractionMode = newMode;
 	
@@ -736,23 +814,39 @@ void AARPawn::setInteractionMode(EInteractionMode newMode, ESpawnableObject obje
 		break;
 
 	case EInteractionMode::SpawningObject:
+		mapSetupWidget->changeButtonVisibility(mapSetupWidget->getZoomButton(), false);
 		setObjectToSpawn(object);
 		break;
 
 	case EInteractionMode::BlockingTunnel:
+		mapSetupWidget->changeButtonVisibility(mapSetupWidget->getZoomButton(), false);
 		setBlockEnabled(true);
 		manager->displayTunnelUsed(true);
 		break;
 
 	case EInteractionMode::SwappingObjects:
+		mapSetupWidget->changeButtonVisibility(mapSetupWidget->getZoomButton(), false);
 		setSwapEnabled(true);
 		manager->displaySectionSwap(true);
 		break;
 
 	case EInteractionMode::ApplyingFrenzy:
+		mapSetupWidget->changeButtonVisibility(mapSetupWidget->getZoomButton(), false);
 		setFrenzyEnabled(true);
 		manager->displaySectionFrenzy(true);
 		break;
+	case EInteractionMode::ZoomingIn:
+		if (isZoomedIn == false)
+		{
+			zoomIntoSection(currentlySelectedMapSection);
+		}
+		else if (isZoomedIn == true)
+		{
+			zoomOutSection();
+		}
+		return;
 	}
+
+	currentInteractionMode = newMode;
 }
 

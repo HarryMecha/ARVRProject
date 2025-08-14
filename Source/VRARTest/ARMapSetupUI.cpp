@@ -61,6 +61,12 @@ void UARMapSetupUI::NativeConstruct()
 		FrenzyButton->SetIsEnabled(false);
 	}
 
+	if (zoomButton)
+	{
+		zoomButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnZoomButtonClicked);
+		changeButtonVisibility(zoomButton, false);
+	}
+
 	if (confirmButton)
 	{
 		confirmButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnConfirmButtonClicked);
@@ -86,7 +92,13 @@ void UARMapSetupUI::OnButtonClicked(EEvent event)
 {
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("A Button  has been Clicked"));
 
-	if (event == EEvent::CONFIRM_BUTTON_MAIN)
+	if (event == EEvent::ZOOM_BUTTON)
+	{
+		lastSelectedButtonType = currentlySelectedButtonType;
+		currentlySelectedButtonType = event;
+		buttonClicked->notify(event);
+	}
+	else if (event == EEvent::CONFIRM_BUTTON_MAIN)
 	{
 		if (currentlySelectedButtonType == EEvent::TRAP_BUTTON)
 		{

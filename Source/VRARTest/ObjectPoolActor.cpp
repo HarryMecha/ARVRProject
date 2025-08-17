@@ -79,14 +79,20 @@ void AObjectPoolActor::initialisePool(TSubclassOf<AActor> poolTypeClass)
     }
 
     firstAvailable = EntityPool[0];
-    UE_LOG(LogTemp, Log, TEXT("Object pool initialized. First available entity: %s"), *firstAvailable->GetName());
+    GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Purple, FString::Printf(TEXT("Pool Initialised")));
 
 }
 
 
 AActor* AObjectPoolActor::getAvailableEntity()
 {
-    if (!firstAvailable) return nullptr;
+    if (!firstAvailable)
+    {
+        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Purple, FString::Printf(TEXT("firstAvailable not working")));
+
+        return nullptr;
+    }
+    
 
     AActor* newEntity = firstAvailable;
     UPooledEntityComponent* poolComponent = Cast<UPooledEntityComponent>(newEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
@@ -113,7 +119,14 @@ void AObjectPoolActor::returnToPool(AActor* entity)
     UPooledEntityComponent* poolComponent = Cast<UPooledEntityComponent>(entity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
     poolComponent->setOwnerSection(nullptr);
     poolComponent->setInUse(false);
-    poolComponent->setNext(Cast<UPooledEntityComponent>(firstAvailable->GetComponentByClass(UPooledEntityComponent::StaticClass())));
+   
+    if (firstAvailable) {
+        UPooledEntityComponent* firstAvailableComponent = Cast<UPooledEntityComponent>(firstAvailable->GetComponentByClass(UPooledEntityComponent::StaticClass()));
+        poolComponent->setNext(firstAvailableComponent);
+    }
+    else {
+        poolComponent->setNext(nullptr);
+    }
 
     entity->SetActorHiddenInGame(true);
     entity->SetActorEnableCollision(false);

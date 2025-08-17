@@ -105,12 +105,7 @@ void ALivingPooledEntity::Die()
 
 void ALivingPooledEntity::CreateHealthUI()
 {
-    if (!heartActorClass)
-    {
-        UE_LOG(LogTemp, Error, TEXT("heartActorClass is null. Skipping health UI creation."));
-        return;
-    }
-
+ 
     float spacing = 20.0f;
 
     for (int i = 0; i < currentMaxHealth; i++)

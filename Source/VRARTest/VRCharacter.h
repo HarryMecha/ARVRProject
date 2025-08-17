@@ -14,6 +14,7 @@ class UCameraComponent;
 class USceneComponent;
 class UBoxComponent;
 class AMapTunnel;
+class UResultsScreenWidget;
 #include "VRCharacter.generated.h"
 
 UENUM(BlueprintType)
@@ -169,6 +170,24 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Class Decleration")
 	TSubclassOf<UVRMapWidget> vrMapWidgetClass;
 
+	UResultsScreenWidget* getResultsScreenWidget()
+	{
+		return resultsScreenWidget;
+	}
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UWidgetComponent* resultsScreenWidgetComponent;
+
+	UWidgetComponent* getResultsScreenWidgetComponent()
+	{
+		return resultsScreenWidgetComponent;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UResultsScreenWidget* resultsScreenWidget;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Class Decleration")
+	TSubclassOf<UResultsScreenWidget> resultsScreenWidgetClass;
 
 	AARVRGameManager* manager;
 
@@ -221,6 +240,10 @@ public:
 
 	void turnOffLanternPowerUp();
 	
+	void setFinishedBool(bool toggle)
+	{
+		isFinished = toggle;
+	}
 
 protected:
 	// Called when the game starts or when spawned 
@@ -299,13 +322,13 @@ private:
 	
 	FTimerHandle enemyHitResetTimerHandle;
 
-	int numberOfHammerPU = 2;
+	int numberOfHammerPU = 1;
 
-	int numberOfSpeedPU = 2;
+	int numberOfSpeedPU = 1;
 
 	int numberOfPotionPU = 1;
 
-	int numberOfLanternPU = 3;
+	int numberOfLanternPU = 1;
 
 	int currentSelectedIndex = -1;
 
@@ -332,4 +355,6 @@ private:
 	FVector2D StickInput;
 
 	AMapTunnel* selectedTunnel = nullptr;
+
+	bool isFinished = false;
 };

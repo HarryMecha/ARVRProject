@@ -52,6 +52,8 @@ public:
 	void ConfirmMapChoice();
 
 	void startARSession();
+	
+	void stopARSession();
 
 	void setInteractionMode(EInteractionMode newMode, ESpawnableObject object = ESpawnableObject::None);
 
@@ -149,6 +151,8 @@ public:
 		return isZoomedIn;
 	}
 
+	void toggleTouchControl(bool toggle);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -216,9 +220,13 @@ protected:
 private:	
 
 	void OnScreenTouch();
+	
 	AActor* CreatePlaneActor(UARPlaneGeometry* planeGeometry);
+	
 	void DestroyOldPlanes();
+	
 	void UpdatePlanes();
+	
 	APlayerController* playerController;
 	
 	void OnScreenTouchNone(AMapSection* selectedSection);

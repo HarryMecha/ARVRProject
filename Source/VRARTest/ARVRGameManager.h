@@ -8,6 +8,7 @@
 #include "VRRepresentative.h"
 class AVRCharacter;
 class AARPawn;
+class AARCharacter;
 class Command;
 class PlayerMovementCommand;
 class AUDPCommunicationsManager;
@@ -27,6 +28,7 @@ enum class EMessageType : uint8
 {
 	Connection,
 	PlayerMovement,
+	WizardMovement,
 	ObjectStateChange,
 	ARPlayerSelection,
 	SpawnAtSection,
@@ -36,6 +38,7 @@ enum class EMessageType : uint8
 	BlockTunnel,
 	SwapSections,
 	ApplyFrenzy,
+	FireProjectile,
 	ReceiptConfirmation
 
 };
@@ -44,10 +47,9 @@ UENUM(BlueprintType)
 enum class ESpawnableObject : uint8
 {
 	Goblin UMETA(DisplayName = "Goblin"),
-	Skeleton UMETA(DisplayName = "Skeleton"),
-	Demon UMETA(DisplayName = "Demon"),
 	Chest UMETA(DisplayName = "Chest"),
 	Trap UMETA(DisplayName = "Trap"),
+	Spell UMETA(DisplayName = "Spell"),
 	None UMETA(DisplayName = "None")
 };
 
@@ -75,6 +77,13 @@ public:
 	AUDPCommunicationsManager* udpCommunicationsManager;
 
 	AARPawn* arPawn;
+
+	AARCharacter* arCharacter;
+
+	AARCharacter* getARCharacter()
+	{
+		return arCharacter;
+	}
 
 	AVRCharacter* vrCharacter;
 
@@ -141,6 +150,10 @@ public:
 
 	void interactionConclusion(TWeakObjectPtr<AActor> concludedEntityPtr);
 
+	void spawnNonPlacableEntity(ESpawnableObject objectType);
+
+	void nonPlacableObjectConclusion(TWeakObjectPtr<AActor> concludedEntityPtr);
+
 	void switchTurns(EPlayerRole playerTurn);
 
 	void updatePlayerHealth(float amount);
@@ -165,6 +178,8 @@ public:
 
 	void changePopUpText(FString text);
 
+	void startWizardCombat();
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -181,16 +196,38 @@ private:
 
 	AActor* mapRoot;
 
+	FVector originalMapLocation;
+
+	FRotator originalMapRotation;
+
+	FVector originalMapScale;
+	
+	UPROPERTY()
 	TMap<ESpawnableObject, AObjectPoolActor*> EntityPools;
 
 	UPROPERTY(EditAnywhere, Category = "Class Assignments")
 	TSubclassOf<AActor> GoblinPooledEntityClass;
 
+	UPROPERTY()
+	AObjectPoolActor* goblinPool;
+
 	UPROPERTY(EditAnywhere, Category = "Class Assignments")
 	TSubclassOf<AActor> ChestPooledEntityClass;
 
+	UPROPERTY()
+	AObjectPoolActor* chestPool;
+
 	UPROPERTY(EditAnywhere, Category = "Class Assignments")
 	TSubclassOf<AActor> TrapPooledEntityClass;
+
+	UPROPERTY()
+	AObjectPoolActor* trapPool;
+
+	UPROPERTY(EditAnywhere, Category = "Class Assignments")
+	TSubclassOf<AActor> SpellPooledEntityClass;
+
+	UPROPERTY()
+	AObjectPoolActor* spellPool;
 
 	TArray<AMapSection*> mapSections;
 
@@ -206,4 +243,5 @@ private:
 	UPROPERTY(EditAnywhere, Category = "AR Plane")
 	UMaterialInterface* regularMapMaterial;
 
+	bool wizardCombatActive = false;
 };

@@ -5,6 +5,7 @@
 #include "EngineUtils.h"
 #include "VRCharacter.h"
 class AARPawn;
+class AARCharacter;
 class UUIConnectionWidget;
 class AUDPCommunicationsManager;
 
@@ -19,7 +20,7 @@ public:
 	UUIObserver();
 
 	UFUNCTION(BlueprintCallable, Category = "Observer")
-	void init(UWorld* world, AARPawn* pawn);
+	void init(UWorld* world, AARPawn* pawn, AARCharacter* character);
 
 	void OnNotify_Implementation(EEvent event, float value = 0, bool b = false);
 
@@ -28,4 +29,6 @@ private:
 	AUDPCommunicationsManager* udpManager;
 
 	AARPawn* arPawn;
+	
+	AARCharacter* arCharacter;
 };

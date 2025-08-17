@@ -68,114 +68,115 @@ void AARPawn::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if (showPlanes && connectionTypeSelected)
-	{
-		UpdatePlanes();
-	}
-	if (mapSpawned)
-	{
-		if (mapLeftRotate)
+	
+		if (showPlanes && connectionTypeSelected)
 		{
-			RotateMap(-1.0f);
+			UpdatePlanes();
 		}
-		else if (mapRightRotate)
+		if (mapSpawned)
 		{
-			RotateMap(1.0f);
+			if (mapLeftRotate)
+			{
+				RotateMap(-1.0f);
+			}
+			else if (mapRightRotate)
+			{
+				RotateMap(1.0f);
+			}
 		}
-	}
-
+	
 }
 
 // Called to bind functionality to input
 void AARPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	PlayerInputComponent->BindAction("Tap", IE_Pressed, this, &AARPawn::OnScreenTouch);
-
 }
 
 void AARPawn::OnScreenTouch()
 {
-	//The coordinate of the players touch and a bool for if the screen has been pressed.
-	FVector2D touchCoord;
-	bool screenPressed;
-	//This will set the position of the screen press to the X and Y variables and set the bool to true.
-	playerController->GetInputTouchState(ETouchIndex::Touch1, touchCoord.X, touchCoord.Y, screenPressed);
 
-	FVector worldLocation, worldDirection;
-	if (playerController->DeprojectScreenPositionToWorld(touchCoord.X, touchCoord.Y, worldLocation, worldDirection))
-	{
-		FVector traceStart = worldLocation;
-		FVector traceEnd = worldLocation + (worldDirection * 100000.0f);
+		//The coordinate of the players touch and a bool for if the screen has been pressed.
+		FVector2D touchCoord;
+		bool screenPressed;
+		//This will set the position of the screen press to the X and Y variables and set the bool to true.
+		playerController->GetInputTouchState(ETouchIndex::Touch1, touchCoord.X, touchCoord.Y, screenPressed);
 
-		FHitResult hitResult;
-		FCollisionQueryParams traceParams;
-		traceParams.bReturnPhysicalMaterial = false;
-
-		bool hit = GetWorld()->LineTraceSingleByChannel(hitResult, traceStart, traceEnd, ECC_Visibility, traceParams);
-
-		if (hit)
+		FVector worldLocation, worldDirection;
+		if (playerController->DeprojectScreenPositionToWorld(touchCoord.X, touchCoord.Y, worldLocation, worldDirection))
 		{
-			AActor* hitActor = hitResult.GetActor();
-			if (!mapSpawned) {
-				changeSelected(hitActor);
-			}
-			else
+			FVector traceStart = worldLocation;
+			FVector traceEnd = worldLocation + (worldDirection * 100000.0f);
+
+			FHitResult hitResult;
+			FCollisionQueryParams traceParams;
+			traceParams.bReturnPhysicalMaterial = false;
+
+			bool hit = GetWorld()->LineTraceSingleByChannel(hitResult, traceStart, traceEnd, ECC_Visibility, traceParams);
+
+			if (hit)
 			{
-				if (manager->getCurrentTurn() == EPlayerRole::AR)
+				AActor* hitActor = hitResult.GetActor();
+				if (!mapSpawned) {
+					changeSelected(hitActor);
+				}
+				else
 				{
-					if (hitActor)
-					{
-						switch (currentInteractionMode)
+						if (hitActor)
 						{
-						case EInteractionMode::SpawningObject:
-							if (hitActor->IsA(AMapSection::StaticClass())) 
+							if (currentInteractionMode == EInteractionMode::None)
 							{
-								AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
-								OnScreenTouchSpawn(selectedMapSection);
+								if (hitActor->IsA(AMapSection::StaticClass()))
+								{
+									AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
+									OnScreenTouchNone(selectedMapSection);
+								}
 							}
-							break;
 
-						case EInteractionMode::BlockingTunnel:
-							if (hitActor->IsA(AMapTunnel::StaticClass()))
-							{
-								AMapTunnel* selectedMapTunnel = Cast<AMapTunnel>(hitActor);
-								OnScreenTouchBlock(selectedMapTunnel);
-							}
-							break;
 
-						case EInteractionMode::SwappingObjects:
-							if (hitActor->IsA(AMapSection::StaticClass()))
+							if (manager->getCurrentTurn() == EPlayerRole::AR)
 							{
-								AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
-								OnScreenTouchSwap(selectedMapSection);
-							}
-							break;
+								switch (currentInteractionMode)
+								{
+								case EInteractionMode::SpawningObject:
+									if (hitActor->IsA(AMapSection::StaticClass()))
+									{
+										AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
+										OnScreenTouchSpawn(selectedMapSection);
+									}
+									break;
 
-						case EInteractionMode::ApplyingFrenzy:
-							if (hitActor->IsA(AMapSection::StaticClass()))
-							{
-								AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
-								OnScreenTouchFrenzy(selectedMapSection);
-							}
-							break;
+								case EInteractionMode::BlockingTunnel:
+									if (hitActor->IsA(AMapTunnel::StaticClass()))
+									{
+										AMapTunnel* selectedMapTunnel = Cast<AMapTunnel>(hitActor);
+										OnScreenTouchBlock(selectedMapTunnel);
+									}
+									break;
 
-						case EInteractionMode::None:
-							if (hitActor->IsA(AMapSection::StaticClass()))
-							{
-								AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
-								OnScreenTouchNone(selectedMapSection);
+								case EInteractionMode::SwappingObjects:
+									if (hitActor->IsA(AMapSection::StaticClass()))
+									{
+										AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
+										OnScreenTouchSwap(selectedMapSection);
+									}
+									break;
+
+								case EInteractionMode::ApplyingFrenzy:
+									if (hitActor->IsA(AMapSection::StaticClass()))
+									{
+										AMapSection* selectedMapSection = Cast<AMapSection>(hitActor);
+										OnScreenTouchFrenzy(selectedMapSection);
+									}
+									break;
+								}
 							}
-							break;
 						}
-					}
-					else
-					{
-
-					}
+					
 				}
 			}
 		}
-	}
+	
 }
 
 void AARPawn::OnScreenTouchNone(AMapSection* selectedMapSection)
@@ -210,7 +211,7 @@ void AARPawn::OnScreenTouchNone(AMapSection* selectedMapSection)
 void AARPawn::OnScreenTouchSpawn(AMapSection* selectedMapSection)
 {
 
-	if (selectedMapSection->getSpecialSection() == false && selectedMapSection->getSectionUsed() == false) {
+	if (selectedMapSection->getSpecialSection() == false && selectedMapSection->getSectionUsed() == false && selectedMapSection != manager->currentlyOccupiedSection) {
 
 		if (currentlySelectedMapSection) {
 			currentlySelectedMapSection->swapSelectedMaterial(unselectedMapMaterial);
@@ -280,7 +281,7 @@ void AARPawn::OnScreenTouchBlock(AMapTunnel* selectedMapTunnel)
 
 void AARPawn::OnScreenTouchSwap(AMapSection* selectedMapSection)
 {
-	if (selectedMapSection->getSpecialSection() == false && selectedMapSection->getSectionUsed() == true) 
+	if (selectedMapSection->getSpecialSection() == false && selectedMapSection->getSectionUsed() == true && selectedMapSection != manager->currentlyOccupiedSection)
 	{
 		if (currentlySelectedMapSection)
 		{
@@ -328,7 +329,7 @@ void AARPawn::OnScreenTouchSwap(AMapSection* selectedMapSection)
 
 void AARPawn::OnScreenTouchFrenzy(AMapSection* selectedMapSection)
 {
-	if (selectedMapSection->getSpecialSection() == false && selectedMapSection->getSectionUsed() == true)
+	if (selectedMapSection->getSpecialSection() == false && selectedMapSection->getSectionUsed() == true && selectedMapSection != manager->currentlyOccupiedSection)
 	{
 		if (currentlySelectedMapSection)
 		{
@@ -559,7 +560,6 @@ void AARPawn::changeSelected(AActor* planeToChange)
 
 void AARPawn::startARSession()
 {
-	
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Starting AR Session"));
 	UARBlueprintLibrary::StartARSession(ARSessionConfig);
 	if (UARBlueprintLibrary::GetARSessionStatus().Status == EARSessionStatus::Running)
@@ -568,6 +568,16 @@ void AARPawn::startARSession()
 		return;
 	}
 	connectionTypeSelected = true;
+}
+
+void AARPawn::stopARSession()
+{
+	if (UARBlueprintLibrary::GetARSessionStatus().Status == EARSessionStatus::Running)
+	{
+		UARBlueprintLibrary::StopARSession();
+
+		return;
+	}
 }
 
 void AARPawn::spawnObject()
@@ -839,10 +849,12 @@ void AARPawn::setInteractionMode(EInteractionMode newMode, ESpawnableObject obje
 		if (isZoomedIn == false)
 		{
 			zoomIntoSection(currentlySelectedMapSection);
+			getMapSetupWidget()->zoomedInView(true);
 		}
 		else if (isZoomedIn == true)
 		{
 			zoomOutSection();
+			getMapSetupWidget()->zoomedInView(false);
 		}
 		return;
 	}
@@ -850,3 +862,11 @@ void AARPawn::setInteractionMode(EInteractionMode newMode, ESpawnableObject obje
 	currentInteractionMode = newMode;
 }
 
+void AARPawn::toggleTouchControl(bool toggle)
+{
+	APlayerController* controller = Cast<APlayerController>(GetController());
+	if (controller)
+	{
+
+	}
+}

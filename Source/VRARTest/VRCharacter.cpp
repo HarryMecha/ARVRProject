@@ -17,7 +17,8 @@
 #include "PowerUpSelectionMenu.h"
 #include "VRMapWidget.h"
 #include "MapTunnel.h"
-
+#include "ARCharacter.h"
+#include "ResultsScreenWidget.h"
 
 // Sets default values
 AVRCharacter::AVRCharacter()
@@ -98,6 +99,15 @@ AVRCharacter::AVRCharacter()
 	vrUIComponent->SetRelativeScale3D(FVector(0.01f, 0.01f, 0.01f));
 	vrUIComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
+	resultsScreenWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("resultsScreenWidgetComponent"));
+	resultsScreenWidgetComponent->SetupAttachment(VRCamera);
+	resultsScreenWidgetComponent->SetWidgetSpace(EWidgetSpace::World);
+	resultsScreenWidgetComponent->SetDrawSize(FVector2D(1920, 1080));
+	resultsScreenWidgetComponent->SetRelativeLocation(FVector(50.f, 0.f, 0.f));
+	resultsScreenWidgetComponent->SetRelativeRotation(FRotator(0.f, 0.f, 0.f));
+	resultsScreenWidgetComponent->SetRelativeScale3D(FVector(0.01f, 0.01f, 0.01f));
+	resultsScreenWidgetComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 	powerUpMenuComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("PowerUpMenuComponent"));
 	powerUpMenuComponent->SetupAttachment(leftHandMesh);
 	powerUpMenuComponent->SetDrawSize(FVector2D(1500, 1500));
@@ -129,6 +139,17 @@ void AVRCharacter::BeginPlay()
 			vrUIComponent->SetWidget(vrPlayerUI);
 			vrPlayerUI->getDwarfHealthBar()->CreateHealthBar(currentHealth);
 			vrPlayerUI->getPowerUpBar()->CreatePowerUpBar();
+		}
+	}
+
+	if (resultsScreenWidgetClass)
+	{
+		resultsScreenWidget = CreateWidget<UResultsScreenWidget>(GetWorld(), resultsScreenWidgetClass);
+
+		if (resultsScreenWidget)
+		{
+			resultsScreenWidgetComponent->SetWidget(resultsScreenWidget);
+			resultsScreenWidgetComponent->SetVisibility(false);
 		}
 	}
 
@@ -267,13 +288,11 @@ void AVRCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAction("PowerUpMenuOpen", IE_Pressed, this, &AVRCharacter::MenuOpenButtonPressed);
 
 	PlayerInputComponent->BindAction("MapOpen", IE_Pressed, this, &AVRCharacter::MapOpenButtonPressed);
-
-
 }
 
 void AVRCharacter::MoveForwardBack(float strength)
 {
-	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !lanternPowerUp && !speedPowerDown)
+	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !lanternPowerUp && !speedPowerDown && !isFinished)
 	{
 		// Get forward direction relative to the camera yaw
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
@@ -285,7 +304,7 @@ void AVRCharacter::MoveForwardBack(float strength)
 
 void AVRCharacter::MoveLeftRight(float strength)
 {
-	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !lanternPowerUp && !speedPowerDown)
+	if (Controller && FMath::Abs(strength) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !lanternPowerUp && !speedPowerDown && !isFinished)
 	{
 		FRotator yawRotation(0, VRCamera->GetComponentRotation().Yaw, 0);
 		FVector direction = FRotationMatrix(yawRotation).GetUnitAxis(EAxis::Y);
@@ -296,7 +315,7 @@ void AVRCharacter::MoveLeftRight(float strength)
 
 void AVRCharacter::TurnLeftRight(float value)
 {
-	if (Controller && FMath::Abs(value) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !speedPowerDown)
+	if (Controller && FMath::Abs(value) > KINDA_SMALL_NUMBER && !powerUpMenuOpen && !speedPowerDown && !isFinished)
 	{
 		float turnRate = 45.0f;
 		float deltaTime = GetWorld()->GetDeltaSeconds();
@@ -352,7 +371,7 @@ void AVRCharacter::getMenuSelectionIndex()
 
 void AVRCharacter::LeftTriggerPressed()
 {
-	if (!lanternPowerUp) {
+	if (!lanternPowerUp && !isFinished) {
 		leftHandMesh->SetStaticMesh(leftControllerClosedMesh);
 		if (leftWidgetInteraction)
 		{
@@ -399,7 +418,7 @@ void AVRCharacter::LeftTriggerReleased()
 
 void AVRCharacter::RightTriggerPressed()
 {
-	if (!lanternPowerUp) {
+	if (!lanternPowerUp && !isFinished) {
 		rightHandMesh->SetStaticMesh(rightControllerClosedMesh);
 		if (mapOpen)
 		{
@@ -458,7 +477,7 @@ void AVRCharacter::RightTriggerReleased()
 
 void AVRCharacter::MenuOpenButtonPressed()
 {
-	if (!powerUpMenuOpen)
+	if (!powerUpMenuOpen && !isFinished)
 	{
 		powerUpMenuOpen = true;
 		powerUpSelectionMenu->reloadMenu(numberOfHammerPU, numberOfSpeedPU, numberOfPotionPU, numberOfLanternPU);
@@ -474,7 +493,7 @@ void AVRCharacter::MenuOpenButtonPressed()
 
 void AVRCharacter::MapOpenButtonPressed()
 {
-	if (!mapOpen)
+	if (!mapOpen && !isFinished)
 	{
 		mapOpen = true;
 		vrMapWidget->SetVisibility(ESlateVisibility::Visible);
@@ -689,7 +708,7 @@ void AVRCharacter::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 		}
 	}
 
-	else if (OverlappedComponent == leftControllerHammerCollider)
+	else if (OverlappedComponent == leftControllerHammerCollider || OverlappedComponent == rightControllerHammerCollider)
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Left Hammer Collider Overlapped")));
 		if (OtherActor->ActorHasTag("Enemy"))
@@ -715,13 +734,9 @@ void AVRCharacter::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 					}
 			}
 		}
-	}
-	else if (OverlappedComponent == rightControllerHammerCollider)
-	{
-		//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Right Hammer Collider Overlapped")));
-		if (OtherActor->ActorHasTag("Enemy"))
+		if (OtherActor->ActorHasTag("Wizard"))
 		{
-			ALivingPooledEntity* collidedEnemy = Cast<ALivingPooledEntity>(OtherActor);
+			AARCharacter* collidedEnemy = Cast<AARCharacter>(OtherActor);
 			if (collidedEnemy && OtherComp->IsA(UCapsuleComponent::StaticClass()))
 			{
 				if (enemyHit == false)
@@ -738,11 +753,17 @@ void AVRCharacter::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor
 					{
 						collidedEnemy->takeDamage(1.0f);
 					}
+					if (collidedEnemy->getCurrentHealth() <= 0)
+					{
+						vrUIComponent->SetVisibility(false);
+						getResultsScreenWidgetComponent()->SetVisibility(true);
+						getResultsScreenWidget()->setResultText("YOU WIN");
+						setFinishedBool(true);
+					}
 					updateDamage(collidedEnemy->getCurrentHealth(), false);
 				}
 			}
 		}
-
 	}
 }
 
@@ -766,19 +787,9 @@ void AVRCharacter::OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* 
 		}
 	}
 
-	else if (OverlappedComponent == leftControllerHammerCollider)
+	else if (OverlappedComponent == leftControllerHammerCollider || OverlappedComponent == rightControllerHammerCollider)
 	{
-		if (OtherActor->ActorHasTag("Enemy"))
-		{
-			if (!GetWorld()->GetTimerManager().IsTimerActive(enemyHitResetTimerHandle))
-			{
-				GetWorld()->GetTimerManager().SetTimer(enemyHitResetTimerHandle, [this]() { enemyHit = false; }, 1.0f, false);
-			}
-		}
-	}
-	else if (OverlappedComponent == rightControllerHammerCollider)
-	{
-		if (OtherActor->ActorHasTag("Enemy"))
+		if (OtherActor->ActorHasTag("Enemy") || OtherActor->ActorHasTag("Wizard"))
 		{
 			if (!GetWorld()->GetTimerManager().IsTimerActive(enemyHitResetTimerHandle))
 			{
@@ -790,25 +801,35 @@ void AVRCharacter::OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* 
 
 void AVRCharacter::modifyHealth(float amount)
 {
-	currentHealth = currentHealth + amount;
-	vrPlayerUI->getDwarfHealthBar()->updateHearts(currentHealth);
-	if (amount < 0)
-	{
-		vrPlayerUI->getDamageFlashWidget()->PlayFlash();
-	}
-	if (amount > 0)
-	{
-		vrPlayerUI->getRestoreFlashWidget()->PlayFlash();
 
+	currentHealth = currentHealth + amount;
+	if (currentHealth <= 0)
+	{
+		vrUIComponent->SetVisibility(false);
+		resultsScreenWidgetComponent->SetVisibility(true);
+		getResultsScreenWidget()->setResultText("YOU LOSE");
+		setFinishedBool(true);
 	}
-	updateDamage(currentHealth, true);
+	else
+	{
+		vrPlayerUI->getDwarfHealthBar()->updateHearts(currentHealth);
+		if (amount < 0)
+		{
+			vrPlayerUI->getDamageFlashWidget()->PlayFlash();
+		}
+		if (amount > 0)
+		{
+			vrPlayerUI->getRestoreFlashWidget()->PlayFlash();
+
+		}
+	}
+		updateDamage(currentHealth, true);
 
 }
 
 
 void AVRCharacter::updateDamage(float health, bool isPlayer)
 {
-;
 	TSharedPtr<UpdateHealthCommand> command = MakeShared<UpdateHealthCommand>();
 	command->commandType = EMessageType::UpdateHealth;
 
@@ -1009,3 +1030,4 @@ bool AVRCharacter::speedPowerDownCheck()
 	}
 	return true;
 }
+

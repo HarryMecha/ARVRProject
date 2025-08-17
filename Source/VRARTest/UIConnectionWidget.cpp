@@ -116,7 +116,7 @@ void  UUIConnectionWidget::setupUIObserver(AARPawn* arPawn = nullptr)
 	UWorld* currentWorld = GetWorld();
 	
 	UIObserverInstance = NewObject<UUIObserver>(this);
-	UIObserverInstance->init(currentWorld, arPawn);
+	UIObserverInstance->init(currentWorld, arPawn, nullptr);
 	if (!connectionButtonClicked)
 	{
 		connectionButtonClicked = NewObject<USubject>(this);
@@ -130,7 +130,7 @@ void  UUIConnectionWidget::setupUIObserver(AARPawn* arPawn = nullptr)
 	if (!UIObserverInstance)
 	{
 		UIObserverInstance = NewObject<UUIObserver>(this);
-		UIObserverInstance->init(currentWorld, arPawn);
+		UIObserverInstance->init(currentWorld, arPawn, nullptr);
 	}
 
 	connectionButtonClicked->addObserver(UIObserverInstance);

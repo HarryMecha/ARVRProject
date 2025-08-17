@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "VRARTest.h"
 #include "ARVRGameManager.h"
+#include "ARCharacter.h"
 #include "LivingPooledEntity.h"
 #include "PooledEntityInterface.h"
 #include "PooledEntityComponent.h"
@@ -67,6 +68,68 @@ public:
     TArray<uint8> serialise(AARVRGameManager* manager) override;
 
     void deserialise(AARVRGameManager* manager, TArray<uint8> packet) override;
+
+};
+
+class WizardMovementCommand : public Command
+{
+public:
+
+    FVector characterPosition = FVector::ZeroVector;
+
+    FRotator characterRotation = FRotator::ZeroRotator;
+
+    bool characterPositionChange = false;
+
+    bool characterRotationChange = false;
+
+    virtual void execute(AARVRGameManager* manager) override
+    {
+        AARCharacter* arCharacter = manager->getARCharacter();
+        if (characterPositionChange)
+        {
+            arCharacter->SetActorRelativeLocation(characterPosition);
+        }
+        if (characterRotationChange)
+        {
+            arCharacter->SetActorRelativeRotation(characterRotation);
+        }
+    }
+
+    TArray<uint8> serialise(AARVRGameManager* manager) override
+    {
+        TArray<uint8> packet;
+        FMemoryWriter Writer(packet, true);
+
+        uint8 MessageType = static_cast<uint8>(commandType);
+        Writer.Serialize(&MessageType, sizeof(uint8));
+
+        Writer.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Writer << characterPositionChange;
+        Writer << characterRotationChange;
+
+        if (characterPositionChange) Writer << characterPosition;
+        if (characterRotationChange) Writer << characterRotation;
+
+
+        return packet;
+    }
+
+    void deserialise(AARVRGameManager* manager, TArray<uint8> packet) override
+    {
+        FMemoryReader Reader(packet, true);
+
+        Reader.Serialize(&commandType, sizeof(uint8));
+
+        Reader.Serialize(&sequenceCount, sizeof(uint32));
+
+        Reader << characterPositionChange;
+        Reader << characterRotationChange;
+
+        if (characterPositionChange) Reader << characterPosition;
+        if (characterRotationChange) Reader << characterRotation;
+    }
 
 };
 
@@ -496,6 +559,46 @@ public:
         Reader.Serialize(&sequenceCount, sizeof(sequenceCount));
 
         Reader.Serialize(&sectionIndex, sizeof(sectionIndex));
+
+    }
+};
+
+class FireProjectileCommand : public Command
+{
+public:
+
+    ESpawnableObject objectType;
+
+    virtual void execute(AARVRGameManager* manager) override
+    {
+        manager->spawnNonPlacableEntity(objectType);
+    }
+
+    TArray<uint8> serialise(AARVRGameManager* manager) override
+    {
+        TArray<uint8> packet;
+        FMemoryWriter Writer(packet, true);
+
+        uint8 MessageType = static_cast<uint8>(commandType);
+        Writer.Serialize(&MessageType, sizeof(uint8));
+
+        Writer.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        uint8 ObjectType = static_cast<uint8>(objectType);
+        Writer.Serialize(&ObjectType, sizeof(uint8));
+
+        return packet;
+    }
+
+    void deserialise(AARVRGameManager* manager, TArray<uint8> packet) override
+    {
+        FMemoryReader Reader(packet, true);
+
+        Reader.Serialize(&commandType, sizeof(uint8));
+
+        Reader.Serialize(&sequenceCount, sizeof(sequenceCount));
+
+        Reader.Serialize(&objectType, sizeof(uint8));
 
     }
 };

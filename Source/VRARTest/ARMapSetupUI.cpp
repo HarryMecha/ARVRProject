@@ -43,6 +43,10 @@ void UARMapSetupUI::NativeConstruct()
 		BlockButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnBlockButtonClicked);
 		BlockButtonWidget->SetVisibility(ESlateVisibility::Hidden);
 		BlockButton->SetIsEnabled(false);
+		if (BlockButtonWidget->getTimerIcon())
+		{
+			BlockButtonWidget->getTimerIcon()->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 
 	if (SwapButtonWidget)
@@ -51,6 +55,10 @@ void UARMapSetupUI::NativeConstruct()
 		SwapButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnSwapButtonClicked);
 		SwapButtonWidget->SetVisibility(ESlateVisibility::Hidden);
 		SwapButton->SetIsEnabled(false);
+		if (SwapButtonWidget->getTimerIcon())
+		{
+			SwapButtonWidget->getTimerIcon()->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 
 	if (FrenzyButtonWidget)
@@ -65,6 +73,7 @@ void UARMapSetupUI::NativeConstruct()
 	{
 		zoomButton->OnClicked.AddDynamic(this, &UARMapSetupUI::OnZoomButtonClicked);
 		changeButtonVisibility(zoomButton, false);
+
 	}
 
 	if (confirmButton)
@@ -113,17 +122,14 @@ void UARMapSetupUI::OnButtonClicked(EEvent event)
 		if (currentlySelectedButtonType == EEvent::BLOCK_BUTTON)
 		{
 			BlockButtonWidget->currentCoolDownAmount = BlockButtonWidget->maxCoolDown;
+			BlockButtonWidget->TimerIcon->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 			cooldownArray.Add(BlockButtonWidget);
 		}
 		if (currentlySelectedButtonType == EEvent::SWAP_BUTTON)
 		{
 			SwapButtonWidget->currentCoolDownAmount = SwapButtonWidget->maxCoolDown;
+			SwapButtonWidget->TimerIcon->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 			cooldownArray.Add(SwapButtonWidget);
-		}
-		if (currentlySelectedButtonType == EEvent::FRENZY_BUTTON)
-		{
-			FrenzyButtonWidget->currentCoolDownAmount = FrenzyButtonWidget->maxCoolDown;
-			cooldownArray.Add(FrenzyButtonWidget);
 		}
 		buttonClicked->notify(event);
 		currentlySelectedButtonType = EEvent::EMPTY;
@@ -165,7 +171,7 @@ void UARMapSetupUI::setupUIObserver(AARPawn* arPawn = nullptr)
 	UWorld* currentWorld = GetWorld();
 
 	UIObserverInstance = NewObject<UUIObserver>(this);
-	UIObserverInstance->init(currentWorld, arPawn);
+	UIObserverInstance->init(currentWorld, arPawn, nullptr);
 	if (!buttonClicked)
 	{
 		buttonClicked = NewObject<USubject>(this);
@@ -179,7 +185,7 @@ void UARMapSetupUI::setupUIObserver(AARPawn* arPawn = nullptr)
 	if (!UIObserverInstance)
 	{
 		UIObserverInstance = NewObject<UUIObserver>(this);
-		UIObserverInstance->init(currentWorld, arPawn);
+		UIObserverInstance->init(currentWorld, arPawn, nullptr);
 	}
 
 	buttonClicked->addObserver(UIObserverInstance);
@@ -243,15 +249,70 @@ void UARMapSetupUI::switchViews()
 	TreasureButtonWidget->SetVisibility(ESlateVisibility::Hidden);
 	TreasureButton->SetIsEnabled(false);
 	TrapButtonWidget->SetVisibility(ESlateVisibility::Hidden);
-	GoblinButton->SetIsEnabled(false);
+	TrapButton->SetIsEnabled(false);
 	GoblinButtonWidget->SetVisibility(ESlateVisibility::Visible);
-	GoblinButton->SetIsEnabled(true);
+	GoblinButton->SetIsEnabled(false);
 	BlockButtonWidget->SetVisibility(ESlateVisibility::Visible);
-	BlockButton->SetIsEnabled(true);
+	BlockButton->SetIsEnabled(false);
 	SwapButtonWidget->SetVisibility(ESlateVisibility::Visible);
-	SwapButton->SetIsEnabled(true);
+	SwapButton->SetIsEnabled(false);
 	FrenzyButtonWidget->SetVisibility(ESlateVisibility::Visible);
-	FrenzyButton->SetIsEnabled(true);
+	FrenzyButton->SetIsEnabled(false);
+	setUpComplete = true;
+}
+
+void UARMapSetupUI::toggleAllButtons(bool toggle)
+{
+	GoblinButton->SetIsEnabled(toggle);
+	BlockButton->SetIsEnabled(toggle);
+	SwapButton->SetIsEnabled(toggle);
+	FrenzyButton->SetIsEnabled(toggle);
+}
+
+void UARMapSetupUI::zoomedInView(bool toggle)
+{
+	if (setUpComplete == true)
+	{
+		if (toggle == true)
+		{
+			GoblinButtonWidget->SetVisibility(ESlateVisibility::Hidden);
+			GoblinButton->SetIsEnabled(false);
+			BlockButtonWidget->SetVisibility(ESlateVisibility::Hidden);
+			BlockButton->SetIsEnabled(false);
+			SwapButtonWidget->SetVisibility(ESlateVisibility::Hidden);
+			SwapButton->SetIsEnabled(false);
+			FrenzyButtonWidget->SetVisibility(ESlateVisibility::Hidden);
+			FrenzyButton->SetIsEnabled(false);
+		}
+		else
+		{
+			GoblinButtonWidget->SetVisibility(ESlateVisibility::Visible);
+			GoblinButton->SetIsEnabled(true);
+			BlockButtonWidget->SetVisibility(ESlateVisibility::Visible);
+			BlockButton->SetIsEnabled(true);
+			SwapButtonWidget->SetVisibility(ESlateVisibility::Visible);
+			SwapButton->SetIsEnabled(true);
+			FrenzyButtonWidget->SetVisibility(ESlateVisibility::Visible);
+			FrenzyButton->SetIsEnabled(true);
+		}
+	}
+	else
+	{
+		if (toggle == true)
+		{
+			TreasureButtonWidget->SetVisibility(ESlateVisibility::Hidden);
+			TreasureButton->SetIsEnabled(false);
+			TrapButtonWidget->SetVisibility(ESlateVisibility::Hidden);
+			TrapButton->SetIsEnabled(false);
+		}
+		else
+		{
+			TreasureButtonWidget->SetVisibility(ESlateVisibility::Visible);
+			TreasureButton->SetIsEnabled(true);
+			TrapButtonWidget->SetVisibility(ESlateVisibility::Visible);
+			TrapButton->SetIsEnabled(true);
+		}
+	}
 }
 
 void UARMapSetupUI::setPopUpText(FString text)

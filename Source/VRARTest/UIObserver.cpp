@@ -4,6 +4,7 @@
 #include "UIConnectionWidget.h"
 #include "ARMapSetupUI.h"
 #include "ARPawn.h"
+#include "ARCharacter.h"
 #include <Kismet/GameplayStatics.h>
 
 
@@ -13,7 +14,7 @@ UUIObserver::UUIObserver()
 	arPawn = nullptr;
 }
 
-void UUIObserver::init(UWorld* world, AARPawn* pawn)
+void UUIObserver::init(UWorld* world, AARPawn* pawn, AARCharacter* character)
 {
 	
 	for (TActorIterator<AUDPCommunicationsManager> It(world); It; ++It)
@@ -22,8 +23,15 @@ void UUIObserver::init(UWorld* world, AARPawn* pawn)
 		break;
 	}
 	APlayerController* playerController = UGameplayStatics::GetPlayerController(world, 0);
-	if(pawn)
-	arPawn = pawn;
+	if (pawn)
+	{
+		arPawn = pawn;
+	}
+
+	if (character)
+	{
+		arCharacter = character;
+	}
 }
 
 
@@ -156,6 +164,12 @@ void UUIObserver::OnNotify_Implementation(EEvent event, float value, bool b)
 		if (arPawn)
 		{
 			arPawn->resetARState();
+		}
+		break;
+	case EEvent::FIRE_BUTTON:
+		if (arCharacter)
+		{
+			arCharacter->spawnSpell();
 		}
 		break;
 	case EEvent::EMPTY:

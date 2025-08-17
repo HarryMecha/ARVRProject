@@ -24,6 +24,7 @@ enum class EEvent : uint8
 	SWAP_BUTTON UMETA(DisplayName = "Swap Button"),
 	FRENZY_BUTTON UMETA(DisplayName =  "Frenzy Button"),
 	ZOOM_BUTTON UMETA(DisplayName = "Zoom Button"),
+	FIRE_BUTTON UMETA(DisplayName = "Fire Button"),
 	EMPTY UMETA(DisplayName = "Empty")
 };
 

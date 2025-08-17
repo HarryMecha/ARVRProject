@@ -18,8 +18,10 @@ AMapSection::AMapSection()
     PrimaryActorTick.bCanEverTick = true;
 
     // Create root scene component
+    
     USceneComponent* RootScene = CreateDefaultSubobject<USceneComponent>(TEXT("RootScene"));
     RootComponent = RootScene;
+    RootComponent->SetMobility(EComponentMobility::Movable);
 
     // Create and attach mesh
     mapMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
@@ -124,18 +126,24 @@ void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor*
                 }
                 if (!currentEntity)
                 {
-                    TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();
-                    command->commandType = EMessageType::SwitchTurns;
+                    if (!finalSection) {
+                        TSharedPtr<SwitchTurnsCommand> command = MakeShared<SwitchTurnsCommand>();
+                        command->commandType = EMessageType::SwitchTurns;
 
-                    command->sequenceCount = arvrmanager->getNextSequenceCount();
+                        command->sequenceCount = arvrmanager->getNextSequenceCount();
 
-                    command->playerTurn = EPlayerRole::AR;
+                        command->playerTurn = EPlayerRole::AR;
 
-                    arvrmanager->AddToOutgoingCommandQueue(command);
-                    arvrmanager->switchTurns(EPlayerRole::AR);
+                        arvrmanager->AddToOutgoingCommandQueue(command);
+                        arvrmanager->switchTurns(EPlayerRole::AR);
+                    }
+                    else
+                    {
+                       //we'll do something here for the vr logic
+                    }
                 }
                 int currentindex = arvrmanager->getMapSections().Find(arvrmanager->getCurrentlyOccupiedSection());
-                if (currentindex != 0)
+                if (currentindex != 0 && currentindex != 26)
                 {
                     vrCharacter->vrMapWidget->getMapSectionFromArray(currentindex - 1)->changeCrossVisibility(true);
 
@@ -146,13 +154,16 @@ void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor*
                 }
                 arvrmanager->setCurrentlyOccupiedSection(this);
                 currentindex = arvrmanager->getMapSections().Find(arvrmanager->getCurrentlyOccupiedSection());
-                vrCharacter->vrMapWidget->updatePlayerMarker(currentindex - 1);
+                if (currentindex != 0 && currentindex != 26)
+                {
+                    vrCharacter->vrMapWidget->updatePlayerMarker(currentindex - 1);
+                }
                 vrCharacter->vrMapWidget->changeMarkerVisibility(true);
                 if (!sectionVisited)
                 {
                     sectionVisited = true;
                     int index = arvrmanager->getMapSections().Find(this);
-                    if (index != 0)
+                    if (index != 0 && index != 26)
                     {
                         vrCharacter->vrMapWidget->getMapSectionFromArray(index - 1)->changeCrossVisibility(false);
 
@@ -179,22 +190,19 @@ void AMapSection::OverlapBegin(UPrimitiveComponent* OverlappedComponent, AActor*
     }
     if (OtherActor->Tags.Contains("VRRep") && OtherComp->IsA(UCapsuleComponent::StaticClass()))
     {
-            GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Character interacted")));
             if (arvrmanager->getCurrentlyOccupiedSection() != this) {
                 toggleWalls(true);
                 arvrmanager->setCurrentlyOccupiedSection(this);
                 if (!sectionVisited)
                 {
                     sectionVisited = true;
-                    if (OtherActor->IsA(AVRCharacter::StaticClass()))
+                    
+                    if (finalSection == true)
                     {
-                        for (ATorchActor* torch : torchArray)
-                        {
-                            if (IsValid(torch))
-                            {
-                                torch->toggleLight();
-                            }
-                        }
+                        GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Starting Wizard Combat")));
+                        boxColliderSection->Deactivate();
+                        arvrmanager->startWizardCombat();
+
                     }
                 }
             }
@@ -236,6 +244,7 @@ void AMapSection::toggleArrows(bool toggle)
 void AMapSection::interactionConclusion()
 {
     arvrmanager->interactionConclusion(currentEntity);
+    setSectionUsed(false);
     TSharedPtr<InteractionAtSectionCommand> command = MakeShared<InteractionAtSectionCommand>();
     command->commandType = EMessageType::InteractionAtSection;
 

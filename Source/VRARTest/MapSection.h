@@ -24,7 +24,7 @@ public:
 
 	void spawnActorAtPoint(AActor* actorToSpawn);
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mesh")
 	class UStaticMeshComponent* mapMesh;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
@@ -38,7 +38,7 @@ public:
 		}
 	}
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Spawning")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Spawning")
 	class USceneComponent* spawnPoint;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Tunnels")
@@ -105,6 +105,10 @@ public:
 	{
 		return sectionVisited;
 	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Special Section")
+	bool specialSection = false;
+
 	bool getSpecialSection()
 	{
 		return specialSection;
@@ -113,6 +117,14 @@ public:
 	void setSpecialSection(bool toggle)
 	{
 		specialSection = toggle;
+	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Special Section")
+	bool finalSection = false;
+
+	bool getFinalSection()
+	{
+		return specialSection;
 	}
 
 protected:
@@ -142,5 +154,4 @@ private:
 
 	bool sectionVisited = false;
 
-	bool specialSection = false;
 };

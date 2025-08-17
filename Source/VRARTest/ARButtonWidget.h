@@ -34,6 +34,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidgetOptional))
 	UImage* numberHolder;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta = (BindWidgetOptional))
+	UImage* TimerIcon;
+
+	UImage* getTimerIcon()
+	{
+		return TimerIcon;
+	}
+
 	UPROPERTY(BlueprintReadOnly, meta = (BindWidgetOptional))
 	UTextBlock* numberText;
 

@@ -65,6 +65,10 @@ public:
 
 	void switchViews();
 
+	void zoomedInView(bool toggle);
+
+	void toggleAllButtons(bool toggle);
+
 	void incrimentCooldownArray()
 	{
 		for (int32 i = cooldownArray.Num() - 1; i >= 0; --i)
@@ -74,6 +78,7 @@ public:
 			widget->currentCoolDownAmount--;
 			if (widget->currentCoolDownAmount < 0)
 			{
+				widget->TimerIcon->SetVisibility(ESlateVisibility::Hidden);
 				cooldownArray.RemoveAt(i);
 
 			}
@@ -134,7 +139,6 @@ protected:
 	UTextBlock* ZoomButtonTitle;
 
 	UPROPERTY()
-	//subject for host button clicked
 	USubject* buttonClicked = nullptr;
 
 	UPROPERTY()
@@ -261,10 +265,12 @@ private:
 
 	void moveButtons(EEvent event);
 
-	int treasureCount = 5;
+	int treasureCount = 1;
 
-	int trapCount = 5;
+	int trapCount = 1;
 
 	TArray<UARButtonWidget*> cooldownArray;
+
+	bool setUpComplete = false;
 
 };

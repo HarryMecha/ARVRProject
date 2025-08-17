@@ -5,6 +5,7 @@
 #include "Command.h"
 #include "VRCharacter.h"
 #include "ARPawn.h"
+#include "ARCharacter.h"
 #include "Kismet/GameplayStatics.h"
 #include "UDPCommunicationsManager.h"
 #include "MapSection.h"
@@ -12,11 +13,16 @@
 #include "GoblinPooledEntity.h"
 #include "ChestPooledEntity.h"
 #include "TrapPooledEntity.h"
+#include "SpellPooledEntity.h"
 #include "MapTunnel.h"
 #include "HealthBarWidget.h"
 #include "ARMapSetupUI.h"
 #include "VRPlayerUI.h"
 #include "UIConnectionWidget.h"
+#include "Components/WidgetComponent.h"
+#include "ResultsScreenWidget.h"
+#include "GameFramework/ProjectileMovementComponent.h"
+
 
 // Sets default values
 AARVRGameManager::AARVRGameManager()
@@ -45,6 +51,9 @@ void AARVRGameManager::BeginPlay()
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Could not find UDP Communications Manager!"));
 	}
 
+	TArray<AActor*> AllActors;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), AllActors);
+
 	if(LocalRole == EPlayerRole::AR)
 	{
 		APawn* FoundPawn = UGameplayStatics::GetPlayerPawn(GetWorld(),0);
@@ -55,13 +64,22 @@ void AARVRGameManager::BeginPlay()
 
 		}
 
-		TArray<AActor*> AllActors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), AllActors);
 		for (AActor* actor : AllActors) 
 		{
 			if (actor->Tags.Contains("MapRoot"))
 			{
 				mapRoot = actor;
+				originalMapLocation = mapRoot->GetActorLocation();
+				originalMapRotation = mapRoot->GetActorRotation();
+				originalMapScale = mapRoot->GetActorScale();
+			}
+			if (actor->Tags.Contains("ARCharacter"))
+			{
+				arCharacter = Cast<AARCharacter>(actor);
+				arCharacter->setManager(this);
+				arCharacter->setIsARSession(true);
+				arCharacter->SetActorTickEnabled(false);
+				arCharacter->SetActorHiddenInGame(true);
 			}
 			if (actor->Tags.Contains("ARHide")) 
 			{
@@ -96,15 +114,19 @@ void AARVRGameManager::BeginPlay()
 			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Could not find VRCharacter"));
 
 		}
-
-		TArray<AActor*> AllActors;
-		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AActor::StaticClass(), AllActors);
 		for (AActor* actor : AllActors)
 		{
 			if (actor->Tags.Contains("VRHide"))
 			{
 				actor->SetActorHiddenInGame(true);
 				actor->SetActorEnableCollision(false);
+			}
+			if (actor->Tags.Contains("ARCharacter"))
+			{
+				arCharacter = Cast<AARCharacter>(actor);
+				arCharacter->setManager(this);
+				arCharacter->SetActorTickEnabled(false);
+
 			}
 			if (actor->Tags.Contains("MapSection"))
 			{
@@ -121,7 +143,6 @@ void AARVRGameManager::BeginPlay()
 	currentlyOccupiedSection = mapSections[0];
 	currentlyOccupiedSection->toggleFog(false);
 	currentlyOccupiedSection->setSectionUsed(true);
-	currentlyOccupiedSection->setSpecialSection(true);
 	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Starting Section: %s"), *currentlyOccupiedSection->GetName()));
 
 	setupPools();
@@ -192,7 +213,10 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 				}
 				if (LocalRole == EPlayerRole::AR)
 				{
-					arPawn->startARSession();
+					if (arPawn)
+					{
+						arPawn->startARSession();
+					}
 					changePopUpText("Select one of the green planes, to place down the map.");
 				}
 			}
@@ -204,6 +228,14 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 			command->deserialise(this, receivedPacket);
 			if(udpCommunicationsManager->getConnectionEstablished() == true)
 			incomingCommandQueue.Enqueue(command);
+			break;
+		}
+		case(EMessageType::WizardMovement):
+		{
+			TSharedPtr<WizardMovementCommand> command = MakeShared<WizardMovementCommand>();
+			command->deserialise(this, receivedPacket);
+			if (udpCommunicationsManager->getConnectionEstablished() == true)
+				incomingCommandQueue.Enqueue(command);
 			break;
 		}
 		case(EMessageType::ARPlayerSelection):
@@ -278,6 +310,15 @@ void AARVRGameManager::AddToIncomingCommandQueue(TArray<uint8> receivedPacket)
 			sendReceiptCommand(command->sequenceCount);
 			break;
 		}
+		case(EMessageType::FireProjectile):
+		{
+			TSharedPtr<FireProjectileCommand> command = MakeShared<FireProjectileCommand>();
+			command->deserialise(this, receivedPacket);
+			incomingCommandQueue.Enqueue(command);
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, TEXT("Fire Projectile Message Received"));
+			sendReceiptCommand(command->sequenceCount);
+			break;
+		}
 		case(EMessageType::ReceiptConfirmation):
 		{
 			TSharedPtr<ReceiptConfirmationCommand> command = MakeShared<ReceiptConfirmationCommand>();
@@ -345,6 +386,7 @@ void AARVRGameManager::AddToOutgoingCommandQueue(TSharedPtr<Command> command)
 	case(EMessageType::BlockTunnel):
 	case(EMessageType::SwapSections):
 	case(EMessageType::ApplyFrenzy):
+	case(EMessageType::FireProjectile):
 	{
 		waitingForConfirmationList.Add(command);
 		break;
@@ -401,7 +443,7 @@ void AARVRGameManager::clearIncomingQueue() {
 }
 
 void AARVRGameManager::setupPools() {
-	AObjectPoolActor* goblinPool = GetWorld()->SpawnActor<AObjectPoolActor>();
+	goblinPool = GetWorld()->SpawnActor<AObjectPoolActor>();
 	if (goblinPool) 
 	{
 		goblinPool->initialisePool(GoblinPooledEntityClass);
@@ -409,18 +451,25 @@ void AARVRGameManager::setupPools() {
 		
 	}
 
-	AObjectPoolActor* chestPool = GetWorld()->SpawnActor<AObjectPoolActor>();
+	chestPool = GetWorld()->SpawnActor<AObjectPoolActor>();
 	if (chestPool) 
 	{
 		chestPool->initialisePool(ChestPooledEntityClass);
 		EntityPools.Add(ESpawnableObject::Chest, chestPool);
 	}
 
-	AObjectPoolActor* trapPool = GetWorld()->SpawnActor<AObjectPoolActor>();
+	trapPool = GetWorld()->SpawnActor<AObjectPoolActor>();
 	if (trapPool)
 	{
 		trapPool->initialisePool(TrapPooledEntityClass);
 		EntityPools.Add(ESpawnableObject::Trap, trapPool);
+	}
+
+	spellPool = GetWorld()->SpawnActor<AObjectPoolActor>();
+	if (spellPool)
+	{
+		spellPool->initialisePool(SpellPooledEntityClass);
+		EntityPools.Add(ESpawnableObject::Spell, spellPool);
 	}
 }
 
@@ -443,10 +492,7 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 {
 	switch (objectType) {
 	case(ESpawnableObject::Goblin): {
-			AObjectPoolActor** goblinPoolPtr = EntityPools.Find(objectType);
-			if (goblinPoolPtr && *goblinPoolPtr)
-			{
-				AObjectPoolActor* goblinPool = *goblinPoolPtr;
+			
 				AActor* goblinEntity = goblinPool->getAvailableEntity();
 				if (goblinEntity && mapSections.Contains(sectionToSpawn)) {
 					UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(goblinEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
@@ -465,7 +511,7 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 						sectionToSpawn->spawnActorAtPoint(goblinEntity);
 						sectionToSpawn->setCurrentEntity(goblinEntity);
 					}
-				}
+				
 			}
 			else
 			{
@@ -474,10 +520,7 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 			break;
 		}
 		case(ESpawnableObject::Chest): {
-			AObjectPoolActor** chestPoolPtr = EntityPools.Find(objectType);
-			if (chestPoolPtr && *chestPoolPtr)
-			{
-				AObjectPoolActor* chestPool = *EntityPools.Find(objectType);
+			
 				AActor* chestEntity = chestPool->getAvailableEntity();
 				if (chestEntity && mapSections.Contains(sectionToSpawn)) {
 					UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(chestEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
@@ -488,7 +531,7 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 						sectionToSpawn->spawnActorAtPoint(chestEntity);
 						sectionToSpawn->setCurrentEntity(chestEntity);
 					}
-				}
+				
 			}
 			else
 			{
@@ -497,10 +540,7 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 			break;
 		}
 		case(ESpawnableObject::Trap): {
-			AObjectPoolActor** trapPoolPtr = EntityPools.Find(objectType);
-			if (trapPoolPtr && *trapPoolPtr)
-			{
-				AObjectPoolActor* trapPool = *EntityPools.Find(objectType);
+			
 				AActor* trapEntity = trapPool->getAvailableEntity();
 				if (trapEntity && mapSections.Contains(sectionToSpawn)) {
 					UPooledEntityComponent* pooledComponent = Cast<UPooledEntityComponent>(trapEntity->GetComponentByClass(UPooledEntityComponent::StaticClass()));
@@ -516,7 +556,6 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 						}
 					}
 				}
-			}
 			else
 			{
 				UE_LOG(LogTemp, Error, TEXT("Could not find a valid Object Pool for objectType %d"), objectType);
@@ -554,6 +593,47 @@ void AARVRGameManager::spawnEntityAtSection(AMapSection* sectionToSpawn, ESpawna
 	}
 }
 
+void AARVRGameManager::spawnNonPlacableEntity(ESpawnableObject objectType)
+{
+	switch (objectType)
+	{
+	case(ESpawnableObject::Spell):
+	{
+			AActor* spellEntity = spellPool->getAvailableEntity();
+			if (spellEntity) 
+			{
+				USceneComponent* spawnPoint = arCharacter->getSpellSpawnPoint();
+				FVector spawnLocation = spawnPoint->GetComponentLocation();
+				FVector forwardDir = spawnPoint->GetForwardVector(); 
+
+				spellEntity->SetActorLocation(spawnLocation);
+
+				ASpellPooledEntity* spellPooledEntity = Cast<ASpellPooledEntity>(spellEntity);
+				if (spellPooledEntity)
+				{
+					spellPooledEntity->setManager(this);
+					spellPooledEntity->startTimeToLive();
+
+					spellEntity->SetActorRotation(forwardDir.Rotation());
+
+					UProjectileMovementComponent* projMove = spellPooledEntity->getProjectileMovement();
+					projMove->Deactivate();
+					projMove->Velocity = forwardDir * projMove->InitialSpeed;
+					projMove->Activate(true);
+
+				}
+				
+			
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("Could not find a valid Object Pool for objectType %d"), objectType);
+		}
+		break;
+	}
+	}
+}
+
 void AARVRGameManager::switchTurns(EPlayerRole playerTurn)
 {
 	switch (playerTurn) 
@@ -567,6 +647,7 @@ void AARVRGameManager::switchTurns(EPlayerRole playerTurn)
 		else if (LocalRole == EPlayerRole::AR)
 		{
 			changePopUpText("Your Turn, place down an object or cast a spell");
+			arPawn->getMapSetupWidget()->toggleAllButtons(true);
 		}
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, FString::Printf(TEXT("Turn Changed: AR Player")));
 		break;
@@ -580,6 +661,7 @@ void AARVRGameManager::switchTurns(EPlayerRole playerTurn)
 		else if (LocalRole == EPlayerRole::AR)
 		{
 			changePopUpText("Dwarf's Turn");
+			arPawn->getMapSetupWidget()->toggleAllButtons(false);
 		}
 		if (currentlyOccupiedSection)
 		{
@@ -632,7 +714,6 @@ void AARVRGameManager::interactionConclusion(TWeakObjectPtr<AActor> concludedEnt
 
 		if (concludedEntity->IsA(AGoblinPooledEntity::StaticClass()))
 		{
-			AObjectPoolActor* goblinPool = *EntityPools.Find(ESpawnableObject::Goblin);
 			goblinPool->returnToPool(concludedEntity);
 			if (LocalRole == EPlayerRole::VR)
 			{
@@ -648,13 +729,11 @@ void AARVRGameManager::interactionConclusion(TWeakObjectPtr<AActor> concludedEnt
 		}
 		if (concludedEntity->IsA(AChestPooledEntity::StaticClass()))
 		{
-			AObjectPoolActor* chestPool = *EntityPools.Find(ESpawnableObject::Chest);
 			chestPool->returnToPool(concludedEntity);
 		}
 
 		if (concludedEntity->IsA(ATrapPooledEntity::StaticClass()))
 		{
-			AObjectPoolActor* trapPool = *EntityPools.Find(ESpawnableObject::Trap);
 			trapPool->returnToPool(concludedEntity);
 		}
 
@@ -678,6 +757,20 @@ void AARVRGameManager::interactionConclusion(TWeakObjectPtr<AActor> concludedEnt
 		UE_LOG(LogTemp, Warning, TEXT("InteractionConclusion was called, but the entity was already destroyed."));
 	}
 
+}
+
+void AARVRGameManager::nonPlacableObjectConclusion(TWeakObjectPtr<AActor> concludedEntityPtr)
+{
+	if (concludedEntityPtr.IsValid())
+	{
+		// It's safe to use. Get the actual actor pointer.
+		AActor* concludedEntity = concludedEntityPtr.Get();
+
+		if (concludedEntity->IsA(ASpellPooledEntity::StaticClass()))
+		{
+			spellPool->returnToPool(concludedEntity);
+		}
+	}
 }
 
 void AARVRGameManager::setCurrentlyOccupiedSection(AMapSection* section)
@@ -709,17 +802,40 @@ void AARVRGameManager::updatePlayerHealth(float amount)
 {
 	if (LocalRole == EPlayerRole::AR) {
 		arPawn->getMapSetupWidget()->getDwarfHealthBar()->updateHearts(amount);
+		arCharacter->getARCombatWidget()->getDwarfHealthBar()->updateHearts(amount);
+		if (amount <= 0)
+		{
+			arPawn->getMapSetupWidget()->SetVisibility(ESlateVisibility::Hidden);
+			arCharacter->getARCombatWidget()->SetVisibility(ESlateVisibility::Hidden);
+			arCharacter->getResultsScreenWidget()->SetVisibility(ESlateVisibility::Visible);
+			arCharacter->getResultsScreenWidget()->setResultText("YOU WIN");
+		}
 	}
 }
 
 void AARVRGameManager::updateEnemyHealth(float amount)
 {
 	if (LocalRole == EPlayerRole::AR) {
-		arPawn->getMapSetupWidget()->getOtherHealthBar()->updateHearts(amount);
-		if (amount <= 0)
+		if (wizardCombatActive == false)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, FString::Printf(TEXT("Enemy Destroyed")));
-			arPawn->getMapSetupWidget()->getOtherHealthBar()->SetVisibility(ESlateVisibility::Hidden);
+			arPawn->getMapSetupWidget()->getOtherHealthBar()->updateHearts(amount);
+			if (amount <= 0)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::White, FString::Printf(TEXT("Enemy Destroyed")));
+				arPawn->getMapSetupWidget()->getOtherHealthBar()->SetVisibility(ESlateVisibility::Hidden);
+			}
+		}
+		else
+		{
+			arCharacter->getARCombatWidget()->getDamageFlashWidget()->PlayFlash();
+			arCharacter->getARCombatWidget()->getWizardHealthBar()->updateHearts(amount);
+			if (amount <= 0)
+			{
+				arCharacter->getARCombatWidget()->SetVisibility(ESlateVisibility::Hidden);
+				arCharacter->getPlayerController()->ActivateTouchInterface(nullptr);
+				arCharacter->getResultsScreenWidget()->SetVisibility(ESlateVisibility::Visible);
+				arCharacter->getResultsScreenWidget()->setResultText("YOU LOSE");
+			}
 		}
 	}
 }
@@ -787,7 +903,7 @@ void AARVRGameManager::displaySectionUsed(bool toggle)
 	for (AMapSection* section : mapSections)
 	{
 		if (toggle == true) {
-			if (section->getSectionUsed() == true || section->getSectionVisited() == true)
+			if (section->getSectionUsed() == true || section == currentlyOccupiedSection)
 			{
 				section->swapSelectedMaterial(blockedMapMaterial);
 			}
@@ -1003,4 +1119,28 @@ void AARVRGameManager::changePopUpText(FString text)
 	{
 		vrCharacter->getVRPlayerUI()->setPopUpText(text);
 	}
+}
+
+void AARVRGameManager::startWizardCombat()
+{
+	APlayerController* playerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+	arPawn->stopARSession();
+
+	arPawn->SetActorTickEnabled(false);
+	arPawn->getMapSetupWidget()->SetVisibility(ESlateVisibility::Hidden);
+
+	mapRoot->SetActorScale3D(originalMapScale);
+	mapRoot->SetActorLocation(originalMapLocation);
+	mapRoot->SetActorRotation(originalMapRotation);
+
+	arCharacter->SetActorTickEnabled(true);
+	arCharacter->SetActorHiddenInGame(false);
+	arCharacter->getARCombatWidget()->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+	playerController->Possess(arCharacter);
+	playerController->SetViewTarget(arCharacter);
+
+
+	wizardCombatActive = true;
 }
